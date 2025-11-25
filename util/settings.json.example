@@ -1,0 +1,39 @@
+{
+    "logWebhook": [
+        "CHANNELID",
+        "TOKEN"
+    ],
+    "logWebhook2": [
+        "CHANNELID",
+        "TOKEN"
+    ],
+     "reportWebhook": [
+        "CHANNELID",
+        "TOKEN"
+    ],
+     "suggestWebhook": [
+        "CHANNELID",
+        "TOKEN"
+    ],
+    "joinWebhook": [
+        "CHANNELID",
+        "TOKEN"
+    ],
+    "leaveWebhook": [
+        "CHANNELID",
+        "TOKEN"
+    ],
+    "devs": [
+        "USERID"
+    ],
+    "testers": [
+        "USERID"
+    ],
+    "moderators": [
+        "USERID"
+    ],
+    "event": "none",
+    "debug": "false",
+    "prefix": ">",
+    "version": "1.0.0"
+}
