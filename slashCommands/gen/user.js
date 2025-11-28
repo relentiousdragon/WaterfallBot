@@ -1,4 +1,4 @@
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, SlashCommandBuilder, MessageFlags, Routes } = require('discord.js');
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle, SlashCommandBuilder, MessageFlags, Routes, ContainerBuilder, SectionBuilder, TextDisplayBuilder, ThumbnailBuilder, SeparatorBuilder, SeparatorSpacingSize, MediaGalleryBuilder, MediaGalleryItemBuilder } = require('discord.js');
 const e = require("../../data/emoji.js");
 
 const FLAG_MASKS = {
@@ -48,12 +48,13 @@ module.exports = {
 
             let badgeArray = badges ? badges.split(' ') : [];
 
+            let botBadges = '';
             if (settings.devs.includes(target.id)) {
-                badgeArray.push(`${e.badge_dev1}${e.badge_dev2}${e.badge_dev3}`);
+                botBadges = `${e.badge_dev1}${e.badge_dev2}${e.badge_dev3}`;
             } else if (settings.moderators.includes(target.id)) {
-                badgeArray.push(`${e.badge_moderator1}${e.badge_moderator2}${e.badge_moderator3}${e.badge_moderator4}${e.badge_moderator5}`);
+                botBadges = `${e.badge_moderator1}${e.badge_moderator2}${e.badge_moderator3}${e.badge_moderator4}${e.badge_moderator5}`;
             } else if (settings.testers.includes(target.id)) {
-                badgeArray.push(`${e.badge_tester1}${e.badge_tester2}${e.badge_tester3}${e.badge_tester4}`);
+                botBadges = `${e.badge_tester1}${e.badge_tester2}${e.badge_tester3}${e.badge_tester4}`;
             }
 
             let isBoosting = false;
@@ -65,7 +66,8 @@ module.exports = {
                 }
             }
 
-            let titleSuffix = ' Information';
+            //let titleSuffix = ' Information';
+            let titleSuffix = '';
             if (target.bot) {
                 let verified = false;
                 if (flags & 65536) {
@@ -77,10 +79,14 @@ module.exports = {
                     : ` ${e.discord_app1}${e.discord_app2}`;
             }
 
-            let title = `${target.username}${isBoosting ? ` ${e.blurple_boost}` : `${titleSuffix}`}`;
+            let title = `About [${target.username}](https://discord.com/users/${target.id})${isBoosting ? ` ${e.blurple_boost}` : `${titleSuffix}`}`;
 
             if (target.id === bot.user.id) {
-                title += "\n-# A Real Waterfall.";
+                title += `\n-# A Real Waterfall. ${e.verified_check_bw}`;
+            }
+
+            if (botBadges) {
+                title += `\n-# ${botBadges}`;
             }
 
             let usernameDisplay = target.username;
@@ -88,18 +94,27 @@ module.exports = {
                 usernameDisplay += `#${target.discriminator}`;
             }
 
-            const hexAccentColor = user.accent_color ? `#${user.accent_color.toString(16).padStart(6, '0')}` : (target.hexAccentColor || 0x5865F2);
+            let accentColor = 0x5865F2;
+            if (member && member.displayColor !== 0) {
+                accentColor = member.displayColor;
+            } else if (user.accent_color) {
+                accentColor = user.accent_color;
+            }
 
-            const embed = new EmbedBuilder()
-                .setColor(hexAccentColor)
-                .setTitle(title)
-                .setThumbnail(target.displayAvatarURL({ size: 2048 }));
+            const section = new SectionBuilder()
+                .setThumbnailAccessory(new ThumbnailBuilder().setURL(target.displayAvatarURL({ size: 2048 })))
+                .addTextDisplayComponents(
+                    new TextDisplayBuilder().setContent(`# ${title}`)
+                );
 
-            const fields = [
-                { name: 'Username & ID', value: `${usernameDisplay} | ${target.id}` },
-                { name: '\u200B', value: '\u200B' },
-                { name: 'Created Date', value: `<t:${Math.floor(target.createdTimestamp / 1000)}:F>` }
-            ];
+            const container = new ContainerBuilder()
+                .setAccentColor(accentColor)
+                .addSectionComponents(section)
+                .addSeparatorComponents(
+                    new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
+                );
+
+            let description = `### Username & ID\n${usernameDisplay} | ${target.id}\n\n### Created Date\n<t:${Math.floor(target.createdTimestamp / 1000)}:F>`;
 
             let clanTag;
             if (user.clan) {
@@ -107,23 +122,20 @@ module.exports = {
             }
 
             if (clanTag) {
-                fields.push({
-                    name: 'Clan',
-                    value: `\`[${clanTag}]\``
-                });
+                description += `\n\n### Clan\n\`[${clanTag}]\``;
             }
 
             if (badgeArray.length) {
-                fields.push({ name: 'Badges', value: badgeArray.join(' ') });
+                description += `\n\n### Badges\n${badgeArray.join(' ')}`;
             }
 
             if (interaction.guild && member) {
-                fields.push({ name: 'Joined Date', value: `<t:${Math.floor(member.joinedTimestamp / 1000)}:F>` });
+                description += `\n\n### Joined Date\n<t:${Math.floor(member.joinedTimestamp / 1000)}:F>`;
             }
 
-            embed.addFields(fields)
-                .setTimestamp()
-                .setFooter({ text: `Waterfall Bot`, iconURL: bot.user.displayAvatarURL({ size: 2048 }) });
+            container.addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(description)
+            );
 
             const row = new ActionRowBuilder()
                 .addComponents(
@@ -135,7 +147,13 @@ module.exports = {
 
             if (user.banner) {
                 const bannerURL = `https://cdn.discordapp.com/banners/${user.id}/${user.banner}.${user.banner.startsWith('a_') ? 'gif' : 'png'}?size=2048`;
-                embed.setImage(bannerURL);
+
+                container.addMediaGalleryComponents(
+                    new MediaGalleryBuilder().addItems(
+                        new MediaGalleryItemBuilder().setURL(bannerURL)
+                    )
+                );
+
                 row.addComponents(
                     new ButtonBuilder()
                         .setLabel('Banner Link')
@@ -144,7 +162,9 @@ module.exports = {
                 );
             }
 
-            return interaction.editReply({ embeds: [embed], components: [row] });
+            container.addActionRowComponents(row);
+
+            return interaction.editReply({ components: [container], flags: MessageFlags.IsComponentsV2 });
 
         } catch (error) {
             logger.error("Error executing command:", error);

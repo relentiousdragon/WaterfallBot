@@ -308,8 +308,11 @@ async function updateStatus() {
         { name: "your server!", type: ActivityType.Watching },
     ];
 
+    const status = process.env.CANARY === 'true' ? 'idle' : 'online';
+
     let currentStatus = 0;
     await bot.user.setActivity(statuses[currentStatus].name, { type: statuses[currentStatus].type });
+    await bot.user.setStatus(status);
 
     setInterval(async () => {
         if (settings.event.toLowerCase() === "maintenance") {

@@ -40,7 +40,7 @@ module.exports = {
 
             return interaction.reply({
                 content: "Thank you for voting!",
-                ephemeral: false
+                flags: MessageFlags.Ephemeral
             });
         }
 

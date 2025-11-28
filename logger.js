@@ -62,6 +62,27 @@ async function sendWebhookImmediate(url, message, level = "INFO") {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
 
+    const isCanary = process.env.CANARY === 'true';
+    const titlePrefix = isCanary ? "YSCHIT MOM" : "BALD";
+    const footerText = isCanary ? "CANARY" : `Shard ${process.env.SHARD_ID || 0}`;
+
+    let color;
+    if (isCanary) {
+        color = level === "FATAL" ? 0x8B0000 :
+            level === "ERROR" ? 0xB22222 :
+                level === "SUCCESS" ? 0x228B22 :
+                    level === "WARN" ? 0xDAA520 :
+                        level === "INFO" ? 0x4682B4 :
+                            0x5F9EA0;
+    } else {
+        color = level === "FATAL" ? 0xFF5555 :
+            level === "ERROR" ? 0xFF6B6B :
+                level === "SUCCESS" ? 0x4ADE80 :
+                    level === "WARN" ? 0xFACC15 :
+                        level === "INFO" ? 0x3B82F6 :
+                            0x60A5FA;
+    }
+
     try {
         const response = await fetch(url, {
             method: "POST",
@@ -70,17 +91,11 @@ async function sendWebhookImmediate(url, message, level = "INFO") {
                 username: "Waterfall",
                 embeds: [
                     {
-                        title: `BALD: ${level}`,
+                        title: `${titlePrefix}: ${level}`,
                         description: diffMessage,
-                        color:
-                            level === "FATAL" ? 0xFF5555 :
-                                level === "ERROR" ? 0xFF6B6B :
-                                    level === "SUCCESS" ? 0x4ADE80 :
-                                        level === "WARN" ? 0xFACC15 :
-                                            level === "INFO" ? 0x3B82F6 :
-                                                0x60A5FA,
+                        color: color,
                         timestamp: new Date().toISOString(),
-                        footer: { text: `Shard ${process.env.SHARD_ID || 0}` }
+                        footer: { text: footerText }
                     }
                 ]
             }),

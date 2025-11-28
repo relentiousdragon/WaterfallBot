@@ -56,14 +56,14 @@ module.exports = {
 			try {
 				const newCommand = require(commandFile);
 				bot.slashCommands.set(newCommand.data.name, newCommand);
-				interaction.reply({ content: `${e.checkmark_green} Command \`${command.data.name}\` was reloaded!`, ephemeral: false });
+				interaction.reply({ content: `${e.checkmark_green} Command \`${command.data.name}\` was reloaded!`, flags: MessageFlags.Ephemeral });
 			}
 			catch (error) {
 				logger.error(error);
 				interaction.reply({ content: `${e.cross_white} There was an error while reloading the command \`${command.data.name}\`:\n\`${error.message}\``, flags: MessageFlags.Ephemeral });
 			}
 		} else if (subcommand === "deploy") {
-			await interaction.deferReply({ ephemeral: false });
+			await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
 			try {
 				await deployCommands();

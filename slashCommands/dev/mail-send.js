@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, ButtonBuilder, ActionRowBuilder, ButtonStyle } = require("discord.js");
+const { SlashCommandBuilder, ButtonBuilder, ActionRowBuilder, ButtonStyle, MessageFlags } = require("discord.js");
 const users = require("../../schemas/users.js");
 const globalMails = require("../../schemas/global_mails.js");
 const settings = require('../../util/settings.json');
@@ -66,7 +66,7 @@ module.exports = {
     async execute(bot, interaction, funcs) {
         try {
             if (!settings.devs.includes(interaction.user.id)) {
-                return interaction.reply({ content: `${e.deny} You don't have permission to use this command.`, ephemeral: true });
+                return interaction.reply({ content: `${e.deny} You don't have permission to use this command.`, flags: MessageFlags.Ephemeral });
             }
             await interaction.deferReply();
             const target = interaction.options.getString('target');
