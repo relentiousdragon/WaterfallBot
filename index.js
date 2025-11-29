@@ -185,7 +185,7 @@ if (shardId == 0) {
 app.use(express.static(path.join(__dirname, "views")));
 app.get("/", (req, res) => res.sendFile(path.join(__dirname, "views", "index.html")));
 app.get("/health", (req, res) => res.sendStatus(200));
-if (shardId === 0) {
+if (shardId === 0 && process.env.CANARY !== "true") {
 
     app.get("/status", (req, res) => {
         res.sendFile(path.join(__dirname, "views", "shards.html"));
@@ -227,16 +227,20 @@ if (shardId === 0) {
 }
 
 app.listen(process.env.port, () => {
-    logger.info(shardId === 1 ?
+    logger.info(shardId === 0 ?
         `Webhook server running on port ${process.env.port}` :
         "Health Endpoint Started"
     );
-    logger.alert(shardId === 1 ?
+    logger.alert(shardId === 0 ?
         `Webhook server running on port ${process.env.port}` :
         "Health Endpoint Started"
     );
 });
 async function updateShardMetrics() {
+    if (process.env.CANARY === "true") {
+        return;
+    }
+
     try {
         const mem = process.memoryUsage();
         const now = new Date();
@@ -366,11 +370,13 @@ bot.once(Events.ClientReady, async () => {
 
     await updateStatus();
 
-    hourlyWorkerJob.start();
-    if (shardId == 1) dailyCronJob.start();
+    if (process.env.CANARY !== "true") {
+        hourlyWorkerJob.start();
+        if (shardId == 0) dailyCronJob.start();
+    }
 
     // UNCOMMENT WHEN BOT IS ADDED TO TOP.GG BALDO
-    /* if (shardId === 0) {
+    /* if (shardId === 0 && process.env.CANARY !== "true") {
         setInterval(postStats, 30 * 60 * 1000);
         setTimeout(postStats, 15 * 1000);
     } */

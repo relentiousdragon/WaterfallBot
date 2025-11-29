@@ -79,7 +79,7 @@ module.exports = {
                     : ` ${e.discord_app1}${e.discord_app2}`;
             }
 
-            let title = `About [${target.username}](https://discord.com/users/${target.id})${isBoosting ? ` ${e.blurple_boost}` : `${titleSuffix}`}`;
+            let title = `About [${target.displayName}](https://discord.com/users/${target.id})${isBoosting ? ` ${e.blurple_boost}` : `${titleSuffix}`}`;
 
             if (target.id === bot.user.id) {
                 title += `\n-# A Real Waterfall. ${e.verified_check_bw}`;

@@ -62,7 +62,7 @@ module.exports = {
                 .setDescription('Active duration (e.g., 1d, 2h) for filtering recipients (ONLY FOR INDIVIDUAL MAILS)')
                 .setRequired(false)),
     dev: true,
-    explicit: true,
+    explicit: process.env.CANARY === "true" ? false : true,
     async execute(bot, interaction, funcs) {
         try {
             if (!settings.devs.includes(interaction.user.id)) {

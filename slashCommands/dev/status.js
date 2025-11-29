@@ -15,7 +15,7 @@ module.exports = {
     integration_types: [0, 1],
     contexts: [0, 1, 2],
     dev: true,
-    explicit: true,
+    explicit: process.env.CANARY === "true" ? false : true,
     async execute(bot, interaction) {
         if (!settings.devs.includes(interaction.user.id)) {
             return interaction.reply({

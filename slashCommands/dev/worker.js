@@ -19,7 +19,7 @@ module.exports = {
 				)
 		),
 	dev: true,
-	explicit: true,
+	explicit: process.env.CANARY === "true" ? false : true,
 	async execute(bot, interaction, funcs) {
 		await interaction.reply({ content: `${e.loading} Please wait...` });
 		const type = interaction.options.getString("type");

@@ -35,7 +35,7 @@ module.exports = {
 				.setName("deploy")
 				.setDescription("Re-deploy all slash commands via REST")),
 	dev: true,
-	explicit: true,
+	explicit: process.env.CANARY === "true" ? false : true,
 	async execute(bot, interaction, funcs) {
 		if (!settings.devs.includes(interaction.user.id)) {
 			return interaction.reply({ content: `${e.deny} You don't have permission to use this command.`, flags: MessageFlags.Ephemeral });

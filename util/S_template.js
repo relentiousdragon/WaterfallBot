@@ -8,6 +8,8 @@ module.exports = {
     integration_types: [0, 1],
     contexts: [0, 1, 2],
     dev: false,
+    mod: false,
+    beta: false,
     explicit: false,
     async execute(bot, interaction, funcs, settings, logger) {
         try {

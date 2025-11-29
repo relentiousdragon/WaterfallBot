@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, MessageFlags, ContainerBuilder, SectionBuilder, TextDisplayBuilder, ThumbnailBuilder, SeparatorBuilder, SeparatorSpacingSize } = require("discord.js");
+const { SlashCommandBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, MessageFlags, ContainerBuilder, SectionBuilder, TextDisplayBuilder, ThumbnailBuilder, SeparatorBuilder, SeparatorSpacingSize, PermissionsBitField } = require("discord.js");
 const e = require("../../data/emoji.js");
 const fs = require("fs");
 const path = require("path");
@@ -17,8 +17,8 @@ module.exports = {
             const commandFolders = fs.readdirSync(path.join(__dirname, ".."));
 
             const isDev = settings.devs.includes(interaction.user.id);
-            const isModerator = interaction.member?.permissions?.has("ModerateMembers") || false;
-            const isAdmin = interaction.member?.permissions?.has("Administrator") || false;
+            const isModerator = new PermissionsBitField(interaction.member?.permissions).has(PermissionsBitField.Flags.ModerateMembers) || false;
+            const isAdmin = new PermissionsBitField(interaction.member?.permissions).has(PermissionsBitField.Flags.Administrator) || false;
 
             for (const folder of commandFolders) {
                 const folderPath = path.join(__dirname, "..", folder);

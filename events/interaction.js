@@ -65,6 +65,20 @@ module.exports = {
             }
             // dev commands
             if (command.dev && !settings.devs.includes(interaction.user.id)) return interaction.reply({ content: `${e.pixel_cross} You don't have permissions to use this command!`, flags: MessageFlags.Ephemeral });
+
+            // mod commands
+            if (command.mod && !settings.devs.includes(interaction.user.id)) {
+                if (!settings.moderators || !settings.moderators.includes(interaction.user.id)) {
+                    return interaction.reply({ content: `${e.pixel_cross} You don't have permissions to use this command!`, flags: MessageFlags.Ephemeral });
+                }
+            }
+
+            // beta/tester commands
+            if (command.beta && !settings.devs.includes(interaction.user.id)) {
+                if (!settings.testers || !settings.testers.includes(interaction.user.id)) {
+                    return interaction.reply({ content: `${e.pixel_cross} You don't have permissions to use this command!`, flags: MessageFlags.Ephemeral });
+                }
+            }
             if (cooldowns.has(userId)) {
                 const expirationTime = cooldowns.get(userId);
                 if (Date.now() < expirationTime) {

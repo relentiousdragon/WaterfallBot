@@ -31,7 +31,7 @@ module.exports = {
         let latencyEmoji = "";
         let embedColor = 0x4756ff;
 
-        if (latency < 100) {
+        if (latency < 120) {
             latencyEmoji = e.lightning_green;
             embedColor = 0x1ABC9C;
         } else if (latency < 200) {
@@ -52,7 +52,9 @@ module.exports = {
 
         const shardServers = bot.guilds.cache.filter(guild => guild.shard.id === shardId).size;
 
-        let shardname = shardId === 0 ? "SIEGE"
+        const isCanary = process.env.CANARY === 'true';
+
+        let shardname = shardId === 0 ? (isCanary ? "MECH" : "SIEGE")
             : shardId === 1 ? "SUBZERO"
                 : shardId === 2 ? "MIDNIGHT"
                     : `Shard ${shardId}`;
@@ -89,7 +91,7 @@ module.exports = {
                 new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Large).setDivider(true)
             )
             .addTextDisplayComponents(
-                new TextDisplayBuilder().setContent(`-# Version ${settings.version}  ‎ • ‎ Made with 💻 by DevSiege Studios`)
+                new TextDisplayBuilder().setContent(`-# Version ${settings.version}${isCanary ? ' CANARY' : ''} ‎ • ‎ Made with ${Math.random() < 0.05 ? (Math.random() < 0.5 ? '🧱' : '🍝') : '💻'} by DevSiege Studios`)
             );
 
         return interaction.reply({

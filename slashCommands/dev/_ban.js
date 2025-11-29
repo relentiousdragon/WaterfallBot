@@ -19,8 +19,8 @@ module.exports = {
                 .setDescription("Ban or unban a server")
                 .addStringOption(option => option.setName("server_id").setDescription("The ID of the server to ban/unban").setRequired(true))
                 .addBooleanOption(option => option.setName("state").setDescription("True to ban, False to unban").setRequired(true))),
-    dev: true,
-    explicit: true,
+    mod: true,
+    explicit: process.env.CANARY === "true" ? false : true,
     async execute(bot, interaction, funcs, settings, logger) {
         try {
             const isModerator = settings.moderators && settings.moderators.includes(interaction.user.id);

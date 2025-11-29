@@ -1,4 +1,4 @@
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, MessageFlags, ContainerBuilder, SectionBuilder, TextDisplayBuilder, ThumbnailBuilder, SeparatorBuilder, SeparatorSpacingSize } = require("discord.js");
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, MessageFlags, ContainerBuilder, SectionBuilder, TextDisplayBuilder, ThumbnailBuilder, SeparatorBuilder, SeparatorSpacingSize, PermissionsBitField } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
 const users = require("../schemas/users.js");
@@ -81,8 +81,8 @@ async function handleSelectMenuInteraction(bot, interaction, settings, logger) {
         const selectedCategory = interaction.values[0];
 
         const isDev = settings.devs.includes(interaction.user.id);
-        const isModerator = interaction.member?.permissions?.has("ModerateMembers") || false;
-        const isAdmin = interaction.member?.permissions?.has("Administrator") || false;
+        const isModerator = new PermissionsBitField(interaction.member?.permissions).has(PermissionsBitField.Flags.ModerateMembers) || false;
+        const isAdmin = new PermissionsBitField(interaction.member?.permissions).has(PermissionsBitField.Flags.Administrator) || false;
 
         if (selectedCategory === "Dev" && !isDev) {
             return interaction.reply({
@@ -114,6 +114,7 @@ async function handleSelectMenuInteraction(bot, interaction, settings, logger) {
                             continue;
                         }
                         command.help.data = command.data;
+                        command.help.beta = command.beta;
                         commands.push(command.help);
                     }
                 } catch (err) {
@@ -128,6 +129,8 @@ async function handleSelectMenuInteraction(bot, interaction, settings, logger) {
         for (let i = 0; i < commands.length; i++) {
             const cmd = commands[i];
             const emoji = i === commands.length - 1 ? e.reply : e.reply_cont;
+
+            const betaBadge = cmd.beta ? `${e.badge_beta1}${e.badge_beta2} ` : "";
 
             let permText = "";
             if (cmd.permissions?.length > 0) {
@@ -145,7 +148,7 @@ async function handleSelectMenuInteraction(bot, interaction, settings, logger) {
             ) || [];
 
             if (subcommands.length > 0) {
-                commandList += `${emoji} **/${cmd.name}** - ${cmd.description}\n`;
+                commandList += `${emoji} ${betaBadge}**/${cmd.name}** - ${cmd.description}\n`;
 
                 for (let j = 0; j < subcommands.length; j++) {
                     const sub = subcommands[j];
@@ -157,7 +160,7 @@ async function handleSelectMenuInteraction(bot, interaction, settings, logger) {
                 if (permText) commandList += `${permText}\n`;
                 if (botPermText) commandList += `${botPermText}\n`;
             } else {
-                commandList += `${emoji} **/${cmd.name}** - ${cmd.description}\n`;
+                commandList += `${emoji} ${betaBadge}**/${cmd.name}** - ${cmd.description}\n`;
                 if (permText) commandList += `${permText}\n`;
                 if (botPermText) commandList += `${botPermText}\n`;
             }

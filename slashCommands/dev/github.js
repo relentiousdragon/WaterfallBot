@@ -17,7 +17,7 @@ module.exports = {
                 .setName("status")
                 .setDescription("Check GitHub repository status")),
     dev: true,
-    explicit: true,
+    explicit: process.env.CANARY === "true" ? false : true,
     async execute(bot, interaction, funcs, settings, logger) {
         try {
             if (!settings.devs.includes(interaction.user.id)) {

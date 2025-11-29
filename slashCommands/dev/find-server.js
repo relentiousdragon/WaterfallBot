@@ -57,7 +57,7 @@ module.exports = {
                 .setRequired(false)
         ),
     dev: true,
-    explicit: true,
+    explicit: process.env.CANARY === "true" ? false : true,
     async autocomplete(interaction, bot) {
         if (!settings.devs.includes(interaction.user.id)) return interaction.respond([]);
         const focused = interaction.options.getFocused();
