@@ -7,7 +7,6 @@
         "placeholder": "Select a category",
         "view_category": "View {{category}} commands",
         "select_category": "Select a category from the dropdown below to view commands",
-        "support_server": "Join our [support server](https://discord.gg/Dj5vS3mj7S) for help and updates related to the bot!",
         "available_commands": "**Available Commands:** {{count}}"
     },
     "botstats": {
