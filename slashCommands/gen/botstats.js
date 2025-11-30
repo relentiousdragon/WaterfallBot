@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, MessageFlags, ContainerBuilder, SectionBuilder, TextDisplayBuilder, SeparatorBuilder, SeparatorSpacingSize, ButtonBuilder, ButtonStyle, ActionRowBuilder, ThumbnailBuilder } = require('discord.js');
-const commandMeta = require('../../util/i18n.js').getCommandMetadata;
+const commandMeta = require('../../util/i18n.js').getCommandMetadata();
 const shardStats = require("../../schemas/shardStats.js");
 const e = require("../../data/emoji.js");
 
