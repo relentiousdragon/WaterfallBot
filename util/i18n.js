@@ -89,8 +89,14 @@ function getCommandMetadata() {
     return metadata;
 }
 
+async function reloadI18n() {
+    await i18n.reloadResources();
+    logger.gradient('i18n resources reloaded');
+}
+
 module.exports = {
     i18n,
     initI18n,
-    getCommandMetadata: getCommandMetadata()
+    getCommandMetadata,
+    reloadI18n
 };

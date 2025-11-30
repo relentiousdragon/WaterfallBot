@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, MessageFlags } = require("discord.js");
 const users = require("../../schemas/users.js");
-const commandMeta = require("../../util/i18n.js").getCommandMetadata;
+const commandMeta = require("../../util/i18n.js").getCommandMetadata();
 const e = require("../../data/emoji.js");
 //
 module.exports = {

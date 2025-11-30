@@ -2,7 +2,7 @@ const { SlashCommandBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBu
 const e = require("../../data/emoji.js");
 const fs = require("fs");
 const path = require("path");
-const commandMeta = require("../../util/i18n.js").getCommandMetadata;
+const commandMeta = require("../../util/i18n.js").getCommandMetadata();
 //
 module.exports = {
     data: new SlashCommandBuilder()

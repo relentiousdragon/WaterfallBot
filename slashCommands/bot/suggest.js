@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, MessageFlags, WebhookClient } = require('discord.js');
 const e = require('../../data/emoji.js');
-const commandMeta = require("../../util/i18n.js").getCommandMetadata;
+const commandMeta = require("../../util/i18n.js").getCommandMetadata();
 //
 module.exports = {
     data: new SlashCommandBuilder()

@@ -1,7 +1,7 @@
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, SlashCommandBuilder, MessageFlags, Routes, ContainerBuilder, SectionBuilder, TextDisplayBuilder, ThumbnailBuilder, SeparatorBuilder, SeparatorSpacingSize, MediaGalleryBuilder, MediaGalleryItemBuilder } = require('discord.js');
 const e = require("../../data/emoji.js");
 
-const commandMeta = require("../../util/i18n.js").getCommandMetadata;
+const commandMeta = require("../../util/i18n.js").getCommandMetadata();
 const FLAG_MASKS = {
     1: e.blurple_staff,
     2: e.blurple_partner,

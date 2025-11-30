@@ -2,7 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, Butt
 const users = require("../../schemas/users.js");
 const globalMails = require("../../schemas/global_mails.js");
 const ms = require("ms");
-const commandMeta = require("../../util/i18n.js").getCommandMetadata;
+const commandMeta = require("../../util/i18n.js").getCommandMetadata();
 const e = require("../../data/emoji.js");
 const logger = require("../../logger.js");
 

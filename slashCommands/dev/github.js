@@ -159,6 +159,7 @@ module.exports = {
             "schemas/",
             "hourlyWorker.js",
             "dailyWorker.js",
+            "locales/"
         ];
 
         const shardRestartRequired = [
@@ -207,6 +208,8 @@ module.exports = {
                     await this.reloadEvent(bot, file);
                 } else if (file.includes("settings.json")) {
                     await this.reloadSettings();
+                } else if (file.startsWith("locales/")) {
+                    await this.reloadLocales(file);
                 } else if (file.includes("functions.js") || file.includes("interactionHandlers.js")) {
                     await this.reloadUtilFile(file);
                 }
@@ -266,6 +269,18 @@ module.exports = {
     async reloadUtilFile(filePath) {
         const fullPath = path.join(__dirname, "../../", filePath);
         delete require.cache[require.resolve(fullPath)];
+    },
+
+    async reloadLocales(filePath) {
+        const fullPath = path.join(__dirname, "../../", filePath);
+        if (require.cache[require.resolve(fullPath)]) {
+            delete require.cache[require.resolve(fullPath)];
+        }
+
+        const { reloadI18n } = require("../../util/i18n.js");
+        await reloadI18n();
+
+        logger.info(`Cleared locale cache for: ${filePath}`);
     },
 
     traverse(dir, filename) {
