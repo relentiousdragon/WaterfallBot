@@ -115,7 +115,8 @@ module.exports = {
                 .setThumbnailAccessory(new ThumbnailBuilder().setURL(interaction.client.user.displayAvatarURL({ size: 2048 })))
                 .addTextDisplayComponents(
                     new TextDisplayBuilder().setContent(`# ${e.slash_command} ${t('commands:help.title')}`),
-                    new TextDisplayBuilder().setContent(t('commands:help.select_category'))
+                    new TextDisplayBuilder().setContent(t('commands:help.select_category')),
+                    new TextDisplayBuilder().setContent(t('commands:help.support_server'))
                 );
 
             const container = new ContainerBuilder()
