@@ -45,8 +45,17 @@ function getCommandMetadata() {
         }
     }
 
+    const discordLocaleMap = {
+        'es': 'es-ES',
+        'pt': 'pt-BR',
+        'sv': 'sv-SE',
+        'zh': 'zh-CN',
+        'en': 'en-US'
+    };
+
     for (const lang of languages) {
         const commandsPath = path.join(localesDir, lang, 'commands.json');
+        const discordLocale = discordLocaleMap[lang] || lang;
 
         if (fs.existsSync(commandsPath)) {
             try {
@@ -55,16 +64,25 @@ function getCommandMetadata() {
                 for (const [cmdKey, cmdData] of Object.entries(commands)) {
                     if (metadata[cmdKey]) {
                         if (cmdData.name) {
-                            metadata[cmdKey].name[lang] = cmdData.name;
+                            metadata[cmdKey].name[discordLocale] = cmdData.name;
                         }
                         if (cmdData.description) {
-                            metadata[cmdKey].description[lang] = cmdData.description;
+                            metadata[cmdKey].description[discordLocale] = cmdData.description;
                         }
                     }
                 }
             } catch (err) {
                 logger.error(`[Localization] Error loading commands.json for ${lang}:`, err);
             }
+        }
+    }
+
+    for (const [cmdKey, cmdData] of Object.entries(metadata)) {
+        if (Object.keys(cmdData.name).length === 0) {
+            metadata[cmdKey].name = null;
+        }
+        if (Object.keys(cmdData.description).length === 0) {
+            metadata[cmdKey].description = null;
         }
     }
 
