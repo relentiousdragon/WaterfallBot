@@ -4,6 +4,7 @@ const path = require("path");
 const users = require("../schemas/users.js");
 const globalMails = require("../schemas/global_mails.js");
 const e = require("../data/emoji.js");
+const { i18n } = require("./i18n.js");
 
 const parseEmoji = (emojiString) => {
     if (!emojiString) return undefined;
@@ -15,6 +16,7 @@ const parseEmoji = (emojiString) => {
 };
 //
 async function handleNonCommandInteractions(bot, interaction, userId, users, alertCooldowns) {
+    const t = i18n.getFixedT(interaction.locale);
     const commandName = interaction.commandName;
     const adminCommands = ["help", "botinfo", "status"];
     if (adminCommands.includes(commandName) || commandName == "mail") {
@@ -52,8 +54,8 @@ async function handleNonCommandInteractions(bot, interaction, userId, users, ale
         if (hasUnread) {
             const embed = new EmbedBuilder()
                 .setColor(0x356ee8)
-                .setTitle("You have unread mail!")
-                .setDescription(`Hey <@${userId}>, check your mail using </mail:1442513505755463896>.`)
+                .setTitle(t('events:handlers.unread_mail_title'))
+                .setDescription(t('events:handlers.unread_mail_description', { user: `<@${userId}>` }))
                 .setThumbnail("https://media.discordapp.net/attachments/1005773484028350506/1301842300044972052/jPip3Me.gif?ex=6725f29f&is=6724a11f&hm=928b062b8e393d663fea1252daacf995c071cae852e3b9d1e7be82fcc8fe4341&=&width=472&height=472")
                 .setTimestamp();
 
@@ -68,12 +70,13 @@ async function handleButtonInteraction(interaction, users, settings) {
 }
 
 async function handleSelectMenuInteraction(bot, interaction, settings, logger) {
+    const t = i18n.getFixedT(interaction.locale);
     if (interaction.customId.startsWith("help_category_")) {
         const allowedUserId = interaction.customId.split("_")[2];
 
         if (interaction.user.id !== allowedUserId) {
             return interaction.reply({
-                content: `${e.deny} This help menu is not for you!`,
+                content: `${e.deny} ${t('events:handlers.help_menu_not_yours')}`,
                 flags: MessageFlags.Ephemeral
             });
         }
@@ -86,13 +89,13 @@ async function handleSelectMenuInteraction(bot, interaction, settings, logger) {
 
         if (selectedCategory === "Dev" && !isDev) {
             return interaction.reply({
-                content: `${e.deny} You don't have permission to view this category!`,
+                content: `${e.deny} ${t('events:handlers.no_permission_category')}`,
                 flags: MessageFlags.Ephemeral
             });
         }
         if (selectedCategory === "Moderation" && !isModerator && !isAdmin && !isDev) {
             return interaction.reply({
-                content: `${e.deny} You don't have permission to view this category!`,
+                content: `${e.deny} ${t('events:handlers.no_permission_category')}`,
                 flags: MessageFlags.Ephemeral
             });
         }
@@ -134,12 +137,12 @@ async function handleSelectMenuInteraction(bot, interaction, settings, logger) {
 
             let permText = "";
             if (cmd.permissions?.length > 0) {
-                permText = `${e.reply_cont_cont}   ${e.member} **User Perms:** ${cmd.permissions.join(", ")}`;
+                permText = `${e.reply_cont_cont}   ${e.member} **${t('events:handlers.user_perms')}** ${cmd.permissions.join(", ")}`;
             }
 
             let botPermText = "";
             if ((isAdmin || isModerator || isDev) && cmd.botPermissions?.length > 0) {
-                botPermText = `${e.reply_cont_cont}   ${e.config} **Bot Perms:** ${cmd.botPermissions.join(", ")}`;
+                botPermText = `${e.reply_cont_cont}   ${e.config} **${t('events:handlers.bot_perms')}** ${cmd.botPermissions.join(", ")}`;
             }
 
             const subcommands = cmd.data.options?.filter(opt =>
@@ -148,7 +151,7 @@ async function handleSelectMenuInteraction(bot, interaction, settings, logger) {
             ) || [];
 
             if (subcommands.length > 0) {
-                commandList += `${emoji} ${betaBadge}**/${cmd.name}** - ${cmd.description}\n`;
+                commandList += `${emoji} ${betaBadge}**/${cmd.name}** - ${t(`commands:${cmd.name}.description`, { defaultValue: cmd.description })}\n`;
 
                 for (let j = 0; j < subcommands.length; j++) {
                     const sub = subcommands[j];
@@ -160,7 +163,7 @@ async function handleSelectMenuInteraction(bot, interaction, settings, logger) {
                 if (permText) commandList += `${permText}\n`;
                 if (botPermText) commandList += `${botPermText}\n`;
             } else {
-                commandList += `${emoji} ${betaBadge}**/${cmd.name}** - ${cmd.description}\n`;
+                commandList += `${emoji} ${betaBadge}**/${cmd.name}** - ${t(`commands:${cmd.name}.description`, { defaultValue: cmd.description })}\n`;
                 if (permText) commandList += `${permText}\n`;
                 if (botPermText) commandList += `${botPermText}\n`;
             }
@@ -199,7 +202,7 @@ async function handleSelectMenuInteraction(bot, interaction, settings, logger) {
         const sortedCategories = Object.keys(filteredCategories).sort();
         const selectMenu = new StringSelectMenuBuilder()
             .setCustomId(`help_category_${interaction.user.id}`)
-            .setPlaceholder("Select a category")
+            .setPlaceholder(t('events:handlers.select_category'))
             .addOptions(
                 sortedCategories.map(cat => {
                     let emojiObj;
@@ -210,9 +213,9 @@ async function handleSelectMenuInteraction(bot, interaction, settings, logger) {
                     else emojiObj = parseEmoji(e.info);
 
                     return {
-                        label: cat,
+                        label: t(`common.categories.${cat}`, { defaultValue: cat }),
                         value: cat,
-                        description: `View ${cat} commands`,
+                        description: t('events:handlers.view_category', { cat: t(`common.categories.${cat}`, { defaultValue: cat }) }),
                         emoji: emojiObj,
                         default: cat === selectedCategory
                     };
@@ -224,8 +227,8 @@ async function handleSelectMenuInteraction(bot, interaction, settings, logger) {
         const section = new SectionBuilder()
             .setThumbnailAccessory(new ThumbnailBuilder().setURL(interaction.client.user.displayAvatarURL({ size: 2048 })))
             .addTextDisplayComponents(
-                new TextDisplayBuilder().setContent(`# ${e.slash_command} ${selectedCategory} Commands`),
-                new TextDisplayBuilder().setContent(commandList || "No commands found in this category.")
+                new TextDisplayBuilder().setContent(`# ${e.slash_command} ${t('events:handlers.category_commands', { cat: selectedCategory })}`),
+                new TextDisplayBuilder().setContent(commandList || t('events:handlers.no_commands'))
             );
 
         const container = new ContainerBuilder()

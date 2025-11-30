@@ -1,6 +1,7 @@
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, SlashCommandBuilder, MessageFlags, Routes, ContainerBuilder, SectionBuilder, TextDisplayBuilder, ThumbnailBuilder, SeparatorBuilder, SeparatorSpacingSize, MediaGalleryBuilder, MediaGalleryItemBuilder } = require('discord.js');
 const e = require("../../data/emoji.js");
 
+const commandMeta = require("../../util/i18n.js").getCommandMetadata;
 const FLAG_MASKS = {
     1: e.blurple_staff,
     2: e.blurple_partner,
@@ -28,20 +29,22 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('user')
         .setDescription('Get information about a user')
+        .setNameLocalizations(commandMeta.user.name)
+        .setDescriptionLocalizations(commandMeta.user.description)
         .addUserOption(opt => opt.setName('target').setDescription('User to view'))
         .setDMPermission(true),
     integration_types: [0, 1],
     contexts: [0, 1, 2],
     dev: false,
     explicit: false,
-    async execute(bot, interaction, funcs, settings, logger) {
+    async execute(bot, interaction, funcs, settings, logger, t) {
         try {
             await interaction.deferReply();
 
             const target = interaction.options.getUser('target') || interaction.user;
             const user = await bot.rest.get(Routes.user(target.id)).catch(() => null);
 
-            if (!user) return interaction.editReply({ content: `${e.pixel_cross} User not found`, flags: MessageFlags.Ephemeral });
+            if (!user) return interaction.editReply({ content: `${e.pixel_cross} ${t('commands:user.not_found')}`, flags: MessageFlags.Ephemeral });
 
             const flags = user.public_flags !== null ? user.public_flags : user.flags;
             let badges = translateFlags(flags);
@@ -79,10 +82,10 @@ module.exports = {
                     : ` ${e.discord_app1}${e.discord_app2}`;
             }
 
-            let title = `About [${target.displayName}](https://discord.com/users/${target.id})${isBoosting ? ` ${e.blurple_boost}` : `${titleSuffix}`}`;
+            let title = `${t('commands:user.about', { user: `[${target.displayName}](https://discord.com/users/${target.id})` })}${isBoosting ? ` ${e.blurple_boost}` : `${titleSuffix}`}`;
 
             if (target.id === bot.user.id) {
-                title += `\n-# A Real Waterfall. ${e.verified_check_bw}`;
+                title += `\n-# ${t('commands:user.waterfall_tag')} ${e.verified_check_bw}`;
             }
 
             if (botBadges) {
@@ -114,7 +117,7 @@ module.exports = {
                     new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
                 );
 
-            let description = `### Username & ID\n${usernameDisplay} | ${target.id}\n\n### Created Date\n<t:${Math.floor(target.createdTimestamp / 1000)}:F>`;
+            let description = `### ${t('commands:user.username_id')}\n${usernameDisplay} | ${target.id}\n\n### ${t('commands:user.created_date')}\n<t:${Math.floor(target.createdTimestamp / 1000)}:F>`;
 
             let clanTag;
             if (user.clan) {
@@ -122,15 +125,15 @@ module.exports = {
             }
 
             if (clanTag) {
-                description += `\n\n### Clan\n\`[${clanTag}]\``;
+                description += `\n\n### ${t('commands:user.clan')}\n\`[${clanTag}]\``;
             }
 
             if (badgeArray.length) {
-                description += `\n\n### Badges\n${badgeArray.join(' ')}`;
+                description += `\n\n### ${t('commands:user.badges')}\n${badgeArray.join(' ')}`;
             }
 
             if (interaction.guild && member) {
-                description += `\n\n### Joined Date\n<t:${Math.floor(member.joinedTimestamp / 1000)}:F>`;
+                description += `\n\n### ${t('commands:user.joined_date')}\n<t:${Math.floor(member.joinedTimestamp / 1000)}:F>`;
             }
 
             container.addTextDisplayComponents(
@@ -140,7 +143,7 @@ module.exports = {
             const row = new ActionRowBuilder()
                 .addComponents(
                     new ButtonBuilder()
-                        .setLabel('Avatar Link')
+                        .setLabel(t('commands:user.avatar_link'))
                         .setStyle(ButtonStyle.Link)
                         .setURL(target.displayAvatarURL({ size: 2048 }))
                 );
@@ -156,7 +159,7 @@ module.exports = {
 
                 row.addComponents(
                     new ButtonBuilder()
-                        .setLabel('Banner Link')
+                        .setLabel(t('commands:user.banner_link'))
                         .setStyle(ButtonStyle.Link)
                         .setURL(bannerURL)
                 );
@@ -168,7 +171,7 @@ module.exports = {
 
         } catch (error) {
             logger.error("Error executing command:", error);
-            return interaction.editReply({ content: `${e.pixel_cross} An error occurred while executing the command.`, flags: MessageFlags.Ephemeral });
+            return interaction.editReply({ content: `${e.pixel_cross} ${t('common.error')}`, flags: MessageFlags.Ephemeral });
         }
     },
     help: {
