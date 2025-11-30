@@ -2,16 +2,19 @@ const { SlashCommandBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBu
 const e = require("../../data/emoji.js");
 const fs = require("fs");
 const path = require("path");
+const commandMeta = require("../../util/i18n.js").getCommandMetadata;
 //
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("help")
-        .setDescription("View all available commands"),
+        .setDescription("View all available commands")
+        .setNameLocalizations(commandMeta.help.name)
+        .setDescriptionLocalizations(commandMeta.help.description),
     integration_types: [0, 1],
     contexts: [0, 1, 2],
     dev: false,
     explicit: false,
-    async execute(bot, interaction, funcs, settings, logger) {
+    async execute(bot, interaction, funcs, settings, logger, t) {
         try {
             const commands = [];
             const commandFolders = fs.readdirSync(path.join(__dirname, ".."));
@@ -61,7 +64,7 @@ module.exports = {
             if (sortedCategories.length === 0) {
                 const section = new SectionBuilder()
                     .addTextDisplayComponents(
-                        new TextDisplayBuilder().setContent(`# ${e.slash_command} Waterfall Commands`),
+                        new TextDisplayBuilder().setContent(`# ${e.slash_command} ${t('commands:help.title')}`),
                     );
 
                 const container = new ContainerBuilder()
@@ -71,7 +74,7 @@ module.exports = {
                         new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
                     )
                     .addTextDisplayComponents(
-                        new TextDisplayBuilder().setContent(`-# No commands available.`)
+                        new TextDisplayBuilder().setContent(`-# ${t('commands:help.no_commands')}`)
                     );
 
                 return interaction.reply({
@@ -82,7 +85,7 @@ module.exports = {
 
             const selectMenu = new StringSelectMenuBuilder()
                 .setCustomId(`help_category_${interaction.user.id}`)
-                .setPlaceholder("Select a category")
+                .setPlaceholder(t('commands:help.placeholder'))
                 .addOptions(
                     sortedCategories.map(cat => {
                         let emojiObj;
@@ -93,9 +96,9 @@ module.exports = {
                         else emojiObj = funcs.parseEmoji(e.info);
 
                         return {
-                            label: cat,
+                            label: t(`common.categories.${cat}`, { defaultValue: cat }),
                             value: cat,
-                            description: `View ${cat} commands`,
+                            description: t('commands:help.view_category', { category: t(`common.categories.${cat}`, { defaultValue: cat }) }),
                             emoji: emojiObj
                         };
                     })
@@ -111,8 +114,8 @@ module.exports = {
             const section = new SectionBuilder()
                 .setThumbnailAccessory(new ThumbnailBuilder().setURL(interaction.client.user.displayAvatarURL({ size: 2048 })))
                 .addTextDisplayComponents(
-                    new TextDisplayBuilder().setContent(`# ${e.slash_command} Waterfall Commands`),
-                    new TextDisplayBuilder().setContent(`Select a category from the dropdown below to view commands`)
+                    new TextDisplayBuilder().setContent(`# ${e.slash_command} ${t('commands:help.title')}`),
+                    new TextDisplayBuilder().setContent(t('commands:help.select_category'))
                 );
 
             const container = new ContainerBuilder()
@@ -122,7 +125,7 @@ module.exports = {
                     new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
                 )
                 .addTextDisplayComponents(
-                    new TextDisplayBuilder().setContent(`-# **Available Commands:** ${visibleCommandCount}`)
+                    new TextDisplayBuilder().setContent(`-# ${t('commands:help.available_commands', { count: visibleCommandCount })}`)
                 )
                 .addActionRowComponents(row);
 
@@ -136,7 +139,7 @@ module.exports = {
 
             if (!interaction.replied && !interaction.deferred) {
                 return interaction.reply({
-                    content: `${e.pixel_cross} An error occurred while executing the command.`,
+                    content: `${e.pixel_cross} ${t('common.error')}`,
                     flags: MessageFlags.Ephemeral
                 });
             }

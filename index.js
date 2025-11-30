@@ -16,6 +16,7 @@ const dailyWorker = require("./dailyWorker.js");
 const users = require("./schemas/users.js");
 const ShardStats = require("./schemas/shardStats.js");
 const logger = require("./logger.js");
+const { initI18n } = require("./util/i18n.js");
 
 const settingsPath = path.join(__dirname, "./util/settings.json");
 let settings = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
@@ -567,4 +568,5 @@ function traverseForCommand(dir, filename) {
 
 bot.login(process.env.token).catch(e => logger.error(e));
 mongoose.init();
+initI18n();
 

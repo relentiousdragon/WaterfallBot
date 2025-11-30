@@ -1,4 +1,5 @@
-const { SlashCommandBuilder, ContainerBuilder, SectionBuilder, TextDisplayBuilder, ThumbnailBuilder, SeparatorBuilder, SeparatorSpacingSize, MessageFlags } = require("discord.js");
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags, ContainerBuilder, SectionBuilder, TextDisplayBuilder, SeparatorBuilder, SeparatorSpacingSize, ButtonBuilder, ButtonStyle, ActionRowBuilder, ThumbnailBuilder } = require('discord.js');
+const commandMeta = require('../../util/i18n.js').getCommandMetadata;
 const shardStats = require("../../schemas/shardStats.js");
 const e = require("../../data/emoji.js");
 
@@ -15,13 +16,15 @@ const formatUptime = (uptime) => {
 //
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName("botstats")
-        .setDescription("Display bot performance metrics."),
+        .setName('botstats')
+        .setDescription('Display bot performance metrics.')
+        .setNameLocalizations(commandMeta.botstats.name)
+        .setDescriptionLocalizations(commandMeta.botstats.description),
     integration_types: [0, 1],
     contexts: [0, 1, 2],
     dev: false,
     explicit: false,
-    async execute(bot, interaction, funcs, settings, logger) {
+    async execute(bot, interaction, funcs, settings, logger, t) {
         const shardId = bot.shard.ids[0];
         const shardUptime = process.uptime() * 1000;
         const formattedUptime = formatUptime(shardUptime);
@@ -45,7 +48,7 @@ module.exports = {
             embedColor = 0xE74C3C;
         }
 
-        const status = settings.event === "maintenance" ? "Maintenance" : "Online";
+        const status = settings.event === "maintenance" ? t('commands:botstats.status_maintenance') : t('commands:botstats.status_online');
 
         let shardStatsDocs = await shardStats.find({});
         let totalGuilds = shardStatsDocs.reduce((sum, doc) => sum + (doc.guildCount || 0), 0);
@@ -62,8 +65,8 @@ module.exports = {
         const section = new SectionBuilder()
             .setThumbnailAccessory(new ThumbnailBuilder().setURL(bot.user.displayAvatarURL()))
             .addTextDisplayComponents(
-                new TextDisplayBuilder().setContent(`# Waterfall Stats`),
-                new TextDisplayBuilder().setContent(`-# ${e.icon_github} Release Notes available at [Github](https://github.com/DevSeige-Studios/WaterfallBot/releases)`)
+                new TextDisplayBuilder().setContent(`# ${t('commands:botstats.title')}`),
+                new TextDisplayBuilder().setContent(`-# ${e.icon_github} ${t('commands:botstats.release_notes')}`)
             );
 
         const container = new ContainerBuilder()
@@ -73,25 +76,25 @@ module.exports = {
                 new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Large).setDivider(true)
             )
             .addTextDisplayComponents(
-                new TextDisplayBuilder().setContent(`### Shard Info:\n${e.pin} **Shard ${shardId}:** ${shardname}\n${e.calendar} **Total Shards:** ${totalShards}\n${e.green_point} **Uptime:** ${formattedUptime}`)
+                new TextDisplayBuilder().setContent(`### ${t('commands:botstats.shard_info')}\n${e.pin} ${t('commands:botstats.shard_name', { id: shardId, name: shardname })}\n${e.calendar} ${t('commands:botstats.total_shards', { count: totalShards })}\n${e.green_point} ${t('commands:botstats.uptime', { time: formattedUptime })}`)
             )
             .addSeparatorComponents(
                 new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(false)
             )
             .addTextDisplayComponents(
-                new TextDisplayBuilder().setContent(`### Performance:\n${latencyEmoji} **Latency:** ${latency}ms\n${e.config} **Status:** ${status}`)
+                new TextDisplayBuilder().setContent(`### ${t('commands:botstats.performance')}\n${latencyEmoji} ${t('commands:botstats.latency', { ms: latency })}\n${e.config} ${t('commands:botstats.status', { status: status })}`)
             )
             .addSeparatorComponents(
                 new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(false)
             )
             .addTextDisplayComponents(
-                new TextDisplayBuilder().setContent(`### General:\n${e.globe} **Total Servers:** ${totalGuilds}\n${e.home} **Shard Servers:** ${shardServers}`)
+                new TextDisplayBuilder().setContent(`### ${t('commands:botstats.general')}\n${e.globe} ${t('commands:botstats.total_servers', { count: totalGuilds })}\n${e.home} ${t('commands:botstats.shard_servers', { count: shardServers })}`)
             )
             .addSeparatorComponents(
                 new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Large).setDivider(true)
             )
             .addTextDisplayComponents(
-                new TextDisplayBuilder().setContent(`-# Version ${settings.version}${isCanary ? ' CANARY' : ''} ‎ • ‎ Made with ${Math.random() < 0.05 ? (Math.random() < 0.5 ? '🧱' : '🍝') : '💻'} by DevSiege Studios`)
+                new TextDisplayBuilder().setContent(`-# ${t('commands:botstats.footer', { version: settings.version, canary: isCanary ? ' CANARY' : '', emoji: Math.random() < 0.05 ? (Math.random() < 0.5 ? '🧱' : '🍝') : '💻' })}`)
             );
 
         return interaction.reply({

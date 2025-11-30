@@ -1,0 +1,46 @@
+{
+    "interaction": {
+        "no_permissions": "I don't have the necessary permissions to process slash commands in this channel.",
+        "user_banned": "You are banned from using this bot.",
+        "server_banned": "This server is banned from using this bot.",
+        "maintenance": "The bot is currently on maintenance. We'll be back soon.",
+        "command_unavailable": "This command is not available for this server yet.",
+        "no_permission_command": "You don't have permissions to use this command!",
+        "cooldown": "Please Slow Down!",
+        "error_execution": "An error occured while executing this command.",
+        "button_cooldown": "Hold your horses for a bit, You're clicking too fast!"
+    },
+    "guild_create": {
+        "title": "Joined Server",
+        "name": "Name",
+        "id": "ID",
+        "members": "Members",
+        "owner": "Owner"
+    },
+    "guild_delete": {
+        "title": "Left Server",
+        "name": "Name",
+        "id": "ID",
+        "members": "Members"
+    },
+    "message": {
+        "mention_help": "👋 Hi There, i'm Waterfall. You can use </help:1442513505755463895> to see a list of commands.",
+        "maintenance": "🔧 The bot is currently under maintenance. We'll be back soon.",
+        "mention_prefix": "👋 Hi There, The prefix for this server is `{{prefix}}`. You can use **`{{prefix}}help`** for more information.",
+        "error_execution": "<:Warning:1298554229438550088> An error occured while trying to execute that command!",
+        "unread_mail_title": "You have unread mail!",
+        "unread_mail_description": "Hey {{user}}, check your mail using `{{prefix}}mail`."
+    },
+    "handlers": {
+        "unread_mail_title": "You have unread mail!",
+        "unread_mail_description": "Hey {{user}}, check your mail using </mail:1442513505755463896>.",
+        "help_menu_not_yours": "This help menu is not for you!",
+        "no_permission_category": "You don't have permission to view this category!",
+        "select_category": "Select a category",
+        "view_category": "View {{cat}} commands",
+        "category_commands": "{{cat}} Commands",
+        "no_commands": "No commands found in this category.",
+        "user_perms": "User Perms:",
+        "bot_perms": "Bot Perms:"
+    }
+}

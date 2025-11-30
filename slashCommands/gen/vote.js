@@ -1,16 +1,19 @@
 const { SlashCommandBuilder, MessageFlags } = require("discord.js");
 const users = require("../../schemas/users.js");
+const commandMeta = require("../../util/i18n.js").getCommandMetadata;
 const e = require("../../data/emoji.js");
 //
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("vote")
-        .setDescription("Vote for the bot!"),
+        .setDescription("Vote for the bot!")
+        .setNameLocalizations(commandMeta.vote.name)
+        .setDescriptionLocalizations(commandMeta.vote.description),
     integration_types: [0, 1],
     contexts: [0, 1, 2],
     dev: false,
     explicit: false,
-    async execute(bot, interaction) {
+    async execute(bot, interaction, funcs, settings, logger, t) {
         const userId = interaction.user.id;
         let data = await users.findOne({ userID: userId });
 
@@ -29,7 +32,7 @@ module.exports = {
 
         if (currentTime - lastVoteTime >= twelveHours || (!data.lastVote && !data.lastVoteClaim)) {
             return interaction.reply({
-                content: `${e.deny} You haven't voted yet. Vote for the bot at: [Top.gg](https://top.gg/bot/1435231722714169435/vote)`,
+                content: `${e.deny} ${t('commands:vote.not_voted')}`,
                 flags: MessageFlags.Ephemeral
             });
         }
@@ -39,7 +42,7 @@ module.exports = {
             await data.save();
 
             return interaction.reply({
-                content: "Thank you for voting!",
+                content: t('commands:vote.thank_you'),
                 flags: MessageFlags.Ephemeral
             });
         }
@@ -47,7 +50,7 @@ module.exports = {
         if (currentTime - lastVoteTime < twelveHours) {
             const timeRemaining = lastVoteTime + twelveHours;
             return interaction.reply({
-                content: `${e.deny} You already voted recently. You can Vote again <t:${Math.floor(timeRemaining / 1000)}:R>.`,
+                content: `${e.deny} ${t('commands:vote.already_voted', { time: Math.floor(timeRemaining / 1000) })}`,
                 flags: MessageFlags.Ephemeral
             });
         }

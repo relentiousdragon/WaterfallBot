@@ -915,7 +915,7 @@
                     stats.pingSum += shard.wsPing;
                     stats.pingCount++;
                 }
-                stats.memSum += shard.memory?.heapUsed || 0;
+                stats.memSum += shard.memory?.rss || 0;
 
                 const card = document.createElement("div");
                 card.className = `shard-item ${statusInfo.text === 'Offline' ? 'error-state' : ''}`;
@@ -949,7 +949,7 @@
                         </div>
                         <div class="s-stat">
                             <span class="s-label">Memory</span>
-                            <div class="s-value">${formatMemory(shard.memory?.heapUsed)}</div>
+                            <div class="s-value">${formatMemory(shard.memory?.rss)} <span style="font-size: 0.85em; color: var(--text-muted);">(${formatMemory(shard.memory?.heapUsed)})</span></div>
                         </div>
                     </div>
                     <div class="relative-time shard-updated-time" data-timestamp="${shard.updatedAt}">

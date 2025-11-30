@@ -1,17 +1,20 @@
 const { SlashCommandBuilder, MessageFlags } = require("discord.js");
-const e = require("../data/emoji.js");
+const e = require("../../data/emoji.js");
+const commandMeta = require("../../util/i18n.js").getCommandMetadata;
 //
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("command")
-        .setDescription("wat"),
+        .setNameLocalizations(commandMeta.command.name)
+        .setDescription("wat")
+        .setDescriptionLocalizations(commandMeta.command.description),
     integration_types: [0, 1],
     contexts: [0, 1, 2],
     dev: false,
     mod: false,
     beta: false,
     explicit: false,
-    async execute(bot, interaction, funcs, settings, logger) {
+    async execute(bot, interaction, funcs, settings, logger, t) {
         try {
             //
         } catch (error) {

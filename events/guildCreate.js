@@ -2,6 +2,7 @@ const { Events, EmbedBuilder, WebhookClient } = require('discord.js');
 const { settings } = require('../index.js');
 const e = require('../data/emoji.js');
 const logger = require('../logger.js');
+const { i18n } = require('../util/i18n.js');
 
 module.exports = {
     name: Events.GuildCreate,
@@ -19,15 +20,17 @@ module.exports = {
                 logger.warn(`Failed to fetch owner for guild ${guild.id}: ${err.message}`);
             }
 
+            const t = i18n.getFixedT('en');
+
             const embed = new EmbedBuilder()
                 .setColor(0x00ff00)
-                .setTitle(`<:i:1442933171099275377> Joined Server`)
+                .setTitle(`<:i:1442933171099275377> ${t('events:guild_create.title')}`)
                 .setThumbnail(guild.iconURL({ dynamic: true }))
                 .addFields(
-                    { name: 'Name', value: `${guild.name}`, inline: true },
-                    { name: 'ID', value: `${guild.id}`, inline: true },
-                    { name: 'Members', value: `${guild.memberCount}`, inline: true },
-                    { name: 'Owner', value: owner, inline: false }
+                    { name: t('events:guild_create.name'), value: `${guild.name}`, inline: true },
+                    { name: t('events:guild_create.id'), value: `${guild.id}`, inline: true },
+                    { name: t('events:guild_create.members'), value: `${guild.memberCount}`, inline: true },
+                    { name: t('events:guild_create.owner'), value: owner, inline: false }
                 )
                 .setTimestamp();
 

@@ -4,6 +4,7 @@ const { settings } = require("../index.js");
 const funcs = require("../util/functions.js");
 const { Server } = require("../schemas/servers.js");
 const users = require("../schemas/users.js");
+const { i18n } = require("../util/i18n.js");
 const cooldowns = new Map();
 const alertCooldowns = new Map();
 const adminCommands = ["prefix", "p"];
@@ -31,12 +32,16 @@ module.exports = {
     name: "messageCreate",
     execute: async (bot, message) => {
         if (message.author.bot) return;
+
+        const locale = message.guild ? message.guild.preferredLocale : 'en';
+        const t = i18n.getFixedT(locale);
+
         if (message.mentions.everyone) return;
         const isBotMentionedd = message.content.trim() === `<@${bot.user.id}>`;
         if (!isBotMentionedd) return;
         if (isBotMentionedd) {
             try {
-                return message.reply("👋 Hi There, i'm Waterfall. You can use </help:1442513505755463895> to see a list of commands.");
+                return message.reply(t('events:message.mention_help'));
             } catch {
                 return;
             }
@@ -63,7 +68,7 @@ module.exports = {
 
         if (settings.event === "maintenance" && !settings.devs.includes(message.author.id)) {
             try {
-                return message.reply("🔧 The bot is currently under maintenance. We'll be back soon.");
+                return message.reply(t('events:message.maintenance'));
             } catch {
                 return;
             }
@@ -71,7 +76,7 @@ module.exports = {
 
         if (isBotMentioned) {
             try {
-                return message.reply(`👋 Hi There, The prefix for this server is \`${prefix}\`. You can use **\`${prefix}help\`** for more information.`);
+                return message.reply(t('events:message.mention_prefix', { prefix: prefix }));
             } catch {
                 return;
             }
@@ -107,7 +112,7 @@ module.exports = {
             }
         } catch (err) {
             logger.error("Error executing command: ", err);
-            message.reply("<:Warning:1298554229438550088> An error occured while trying to execute that command!");
+            message.reply(t('events:message.error_execution'));
         }
         if (adminCommands.includes(commandName)) {
             return;
@@ -124,8 +129,8 @@ module.exports = {
             if (userMail && userMail.mail && userMail.mail.some(mail => mail.read !== true)) {
                 const embed = new EmbedBuilder()
                     .setColor(0x0099FF)
-                    .setTitle("You have unread mail!")
-                    .setDescription(`Hey <@${userId}>, check your mail using \`${prefix}mail\`.`)
+                    .setTitle(t('events:message.unread_mail_title'))
+                    .setDescription(t('events:message.unread_mail_description', { user: `<@${userId}>`, prefix: prefix }))
                     .setThumbnail("https://media.discordapp.net/attachments/1005773484028350506/1301842300044972052/jPip3Me.gif?ex=6725f29f&is=6724a11f&hm=928b062b8e393d663fea1252daacf995c071cae852e3b9d1e7be82fcc8fe4341&=&width=472&height=472")
                     .setTimestamp();
 
