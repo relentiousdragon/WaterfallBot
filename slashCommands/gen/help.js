@@ -3,6 +3,7 @@ const e = require("../../data/emoji.js");
 const fs = require("fs");
 const path = require("path");
 const commandMeta = require("../../util/i18n.js").getCommandMetadata();
+const analyticsWorker = require("../../util/analyticsWorker.js");
 //
 module.exports = {
     data: new SlashCommandBuilder()
@@ -91,8 +92,10 @@ module.exports = {
                         let emojiObj;
                         if (cat === "General") emojiObj = funcs.parseEmoji(e.compass_green);
                         else if (cat === "Dev") emojiObj = funcs.parseEmoji(e.config);
-                        else if (cat === "Moderation") emojiObj = funcs.parseEmoji(e.bughunter);
+                        else if (cat === "Utility") emojiObj = funcs.parseEmoji(e.archive);
+                        else if (cat === "Moderation") emojiObj = funcs.parseEmoji(e.blurple_mod);
                         else if (cat === "Bot") emojiObj = funcs.parseEmoji(e.blurple_bot);
+                        else if (cat === "Games") emojiObj = funcs.parseEmoji(e.discord_orbs);
                         else emojiObj = funcs.parseEmoji(e.info);
 
                         return {
@@ -115,16 +118,29 @@ module.exports = {
                 .setThumbnailAccessory(new ThumbnailBuilder().setURL(interaction.client.user.displayAvatarURL({ size: 2048 })))
                 .addTextDisplayComponents(
                     new TextDisplayBuilder().setContent(`# ${e.slash_command} ${t('commands:help.title')}`),
-                    new TextDisplayBuilder().setContent(t('commands:help.select_category')),
-                    new TextDisplayBuilder().setContent(t('commands:help.support_server'))
+                    new TextDisplayBuilder().setContent(`${t('commands:help.select_category')}\n${t('commands:help.support_server')}`)
                 );
+
+            const topCommands = await analyticsWorker.getTopCommands();
+            if (topCommands.length > 0) {
+                const topCmdString = topCommands.map((cmd, i) => {
+                    //const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : "🥉";
+                    const medal = "";
+                    return `${medal} **/${cmd.name}** - ${funcs.abbr(cmd.count)}`;
+                }).join("\n");
+
+                section.addTextDisplayComponents(
+                    new TextDisplayBuilder().setContent(t('commands:help.top_commands', { commands: topCmdString }))
+                );
+            }
 
             const container = new ContainerBuilder()
                 .setAccentColor(0x5865F2)
-                .addSectionComponents(section)
-                .addSeparatorComponents(
-                    new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
-                )
+                .addSectionComponents(section);
+
+            container.addSeparatorComponents(
+                new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
+            )
                 .addTextDisplayComponents(
                     new TextDisplayBuilder().setContent(`-# ${t('commands:help.available_commands', { count: visibleCommandCount })}`)
                 )
@@ -140,7 +156,7 @@ module.exports = {
 
             if (!interaction.replied && !interaction.deferred) {
                 return interaction.reply({
-                    content: `${e.pixel_cross} ${t('common.error')}`,
+                    content: `${e.pixel_cross} ${t('common:error')}`,
                     flags: MessageFlags.Ephemeral
                 });
             }
@@ -151,6 +167,7 @@ module.exports = {
         description: "View all available commands",
         category: "General",
         permissions: [],
-        botPermissions: []
+        botPermissions: [],
+        created: 1764938508
     }
 };

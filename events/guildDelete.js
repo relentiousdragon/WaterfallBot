@@ -1,9 +1,9 @@
 const { Events, EmbedBuilder, WebhookClient } = require('discord.js');
-const { settings } = require('../index.js');
+const { settings } = require('../util/settingsModule.js');
 const e = require('../data/emoji.js');
 const logger = require('../logger.js');
 const { i18n } = require('../util/i18n.js');
-
+//
 module.exports = {
     name: Events.GuildDelete,
     async execute(bot, guild) {

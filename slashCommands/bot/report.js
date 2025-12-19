@@ -101,6 +101,7 @@ module.exports = {
         description: "Report a user or a bot issue/bug",
         category: "Bot",
         permissions: [],
-        botPermissions: []
+        botPermissions: [],
+        created: 1764938508
     }
 };

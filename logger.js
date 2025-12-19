@@ -48,6 +48,50 @@ const levelColors = {
     fatal: chalk.bgRed.white.bold
 };
 
+let currentContext = {};
+const contextStack = [];
+
+function setContext(ctx) {
+    if (Object.keys(currentContext).length > 0) {
+        contextStack.push({ ...currentContext });
+    }
+    currentContext = { ...ctx, timestamp: Date.now() };
+}
+
+function clearContext() {
+    if (contextStack.length > 0) {
+        currentContext = contextStack.pop();
+    } else {
+        currentContext = {};
+    }
+}
+
+function getContext() {
+    return { ...currentContext };
+}
+
+function formatContext(ctx) {
+    const parts = [];
+    if (ctx.guildId) parts.push(`Guild: ${ctx.guildId}`);
+    if (ctx.userId) parts.push(`User: ${ctx.userId}`);
+    if (ctx.command) parts.push(`Command: ${ctx.command}`);
+    if (ctx.action) parts.push(`Action: ${ctx.action}`);
+    if (ctx.channelId) parts.push(`Channel: ${ctx.channelId}`);
+    return parts.length > 0 ? `[${parts.join(' | ')}]` : '';
+}
+
+function extractDiscordErrorCode(error) {
+    if (!error) return null;
+
+    if (error.code) return error.code;
+    if (error.httpStatus) return `HTTP ${error.httpStatus}`;
+    if (error.status) return `HTTP ${error.status}`;
+
+    if (error.rawError?.code) return error.rawError.code;
+
+    return null;
+}
+
 function buildWebhookURL(arr) {
     if (!arr || !arr[0] || !arr[1]) return null;
     return `https://discord.com/api/webhooks/${arr[0]}/${arr[1]}`;
@@ -129,17 +173,13 @@ function formatDiffMessage(level, message) {
     return `${code}# ${message}\n\`\`\``;
 }
 
-function extractRelevantStackInfo(stack, maxFiles = 3) {
+function extractRelevantStackInfo(stack, maxFiles = 5) {
     if (!stack) return "No stack trace";
 
     const lines = stack.split('\n').slice(1);
     const relevantLines = [];
 
     for (const line of lines) {
-        if (line.includes('node_modules') || line.includes('node:internal')) {
-            continue;
-        }
-
         const match = line.match(/at (.+?) \((.+):(\d+):(\d+)\)/) || line.match(/at (.+):(\d+):(\d+)/);
         if (match) {
             const filePath = match[2] || match[1];
@@ -155,37 +195,28 @@ function extractRelevantStackInfo(stack, maxFiles = 3) {
         }
     }
 
-    return relevantLines.length > 0 ? relevantLines.join('\n') : '  [Stack trace filtered]';
+    if (relevantLines.length === 0) {
+        return stack;
+    }
+
+    return relevantLines.join('\n');
 }
 
 function formatValidationError(error) {
     let message = error.message || 'Validation Error';
-
     const validationInfo = [];
 
-    if (error.validator) {
-        validationInfo.push(`Validator: ${error.validator}`);
-    }
-    if (error.expected) {
-        validationInfo.push(`Expected: ${error.expected}`);
-    }
-    if (error.given !== undefined) {
-        validationInfo.push(`Received: ${JSON.stringify(error.given)}`);
-    }
+    if (error.validator) validationInfo.push(`Validator: ${error.validator}`);
+    if (error.expected) validationInfo.push(`Expected: ${error.expected}`);
+    if (error.given !== undefined) validationInfo.push(`Received: ${JSON.stringify(error.given)}`);
 
     if (error.errors && Array.isArray(error.errors)) {
-        const errorSummaries = error.errors.slice(0, 3).map((e, i) => {
-            if (typeof e === 'object' && e !== null) {
-                return `  ${i + 1}. ${e.property || 'Unknown'}: ${e.message || 'Invalid value'}`;
-            }
-            return `  ${i + 1}. ${e}`;
+        validationInfo.push('Detailed Issues:');
+
+        error.errors.forEach((e, i) => {
+            const raw = typeof e === 'object' ? JSON.stringify(e, null, 2) : String(e);
+            validationInfo.push(`  ${i + 1}. ${raw}`);
         });
-
-        if (error.errors.length > 3) {
-            errorSummaries.push(`  ... and ${error.errors.length - 3} more errors`);
-        }
-
-        validationInfo.push('Issues:', ...errorSummaries);
     }
 
     if (validationInfo.length > 0) {
@@ -194,7 +225,7 @@ function formatValidationError(error) {
 
     return message;
 }
-
+//
 const logger = {
     info: (...args) => {
         const msg = args.join(" ");
@@ -219,31 +250,45 @@ const logger = {
     },
 
     error: (...args) => {
+        let explicitContext = null;
+        if (args.length > 1 && typeof args[args.length - 1] === 'object' &&
+            !(args[args.length - 1] instanceof Error) &&
+            (args[args.length - 1].guildId || args[args.length - 1].userId ||
+                args[args.length - 1].command || args[args.length - 1].action)) {
+            explicitContext = args.pop();
+        }
+
+        const ctx = { ...getContext(), ...explicitContext };
+        const contextStr = formatContext(ctx);
+
         const processedArgs = args.map(arg => {
             if (arg instanceof Error) {
                 const isValidationError = arg.validator || arg.expected || arg.given !== undefined || arg.errors;
 
+                const discordCode = extractDiscordErrorCode(arg);
+                const codeStr = discordCode ? ` [Discord Code: ${discordCode}]` : '';
+
                 if (isValidationError) {
                     const cleanMessage = formatValidationError(arg);
-                    const stackInfo = extractRelevantStackInfo(arg.stack);
-                    return `${cleanMessage}\n${stackInfo}`;
+                    return `${cleanMessage}${codeStr}\nStack Trace:\n${arg.stack}`;
                 }
 
-                const cleanMessage = arg.message;
-                const stackInfo = extractRelevantStackInfo(arg.stack);
-                return `${cleanMessage}\n${stackInfo}`;
+                const cleanMessage = arg.message || 'Unknown error';
+                const stackInfo = extractRelevantStackInfo(arg.stack) || arg.stack;
+                return `Error: ${cleanMessage}${codeStr}\nStack Trace:\n${stackInfo}`;
             }
-            return arg;
+            return typeof arg === 'object' ? JSON.stringify(arg, null, 2) : arg;
         });
 
         const msg = processedArgs.join(" ");
-        const line = `${ts()} [ERROR] ${msg}`;
+        const contextPrefix = contextStr ? `${contextStr} ` : '';
+        const line = `${ts()} [ERROR] ${contextPrefix}${msg}`;
         console.log(levelColors.error(line));
         writeToStream(combinedLogStream, line);
         writeToStream(errorLogStream, line);
 
-        if (line.includes("Discord Error")) {
-            logger.alertSync(msg, "ERROR");
+        if (line.includes("Discord Error") || ctx.guildId) {
+            logger.alertSync(`${contextPrefix}${msg}`, "ERROR");
         }
     },
 
@@ -297,5 +342,9 @@ const logger = {
         }
     }
 };
+
+logger.setContext = setContext;
+logger.clearContext = clearContext;
+logger.getContext = getContext;
 
 module.exports = logger;

@@ -164,8 +164,9 @@ module.exports = {
     help: {
         name: "mail",
         description: "Check your mail",
-        category: "General",
+        category: "Bot",
         permissions: [],
-        botPermissions: []
+        botPermissions: [],
+        created: 1764938508
     }
 };

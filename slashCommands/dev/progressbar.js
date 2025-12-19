@@ -27,7 +27,9 @@ module.exports = {
                 .setDescription("Style (optional)")
                 .setRequired(false)
         ),
-    dev: true,
+    dev: false,
+    beta: true,
+    mod: false,
     explicit: process.env.CANARY === "true" ? false : true,
     async execute(bot, interaction) {
         if (!settings.devs.includes(interaction.user.id)) {
@@ -56,6 +58,7 @@ module.exports = {
         description: "Generate a progress bar",
         category: "Dev",
         permissions: [],
-        botPermissions: []
+        botPermissions: [],
+        created: 1764938508
     }
 };

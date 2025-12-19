@@ -15,11 +15,11 @@ const hourlyWorker = require("./hourlyWorker.js");
 const dailyWorker = require("./dailyWorker.js");
 const users = require("./schemas/users.js");
 const ShardStats = require("./schemas/shardStats.js");
+const Analytics = require("./schemas/analytics.js");
+const analyticsWorker = require("./util/analyticsWorker.js");
 const logger = require("./logger.js");
 const { initI18n } = require("./util/i18n.js");
-
-const settingsPath = path.join(__dirname, "./util/settings.json");
-let settings = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
+const { settings, saveSettings } = require("./util/settingsModule.js");
 
 const shardId = parseInt(process.env.SHARD_ID, 10);
 const shardCount = 1;
@@ -27,14 +27,6 @@ const shardCount = 1;
 let shardCache = null;
 let lastCacheUpdate = 0;
 const CACHE_TTL = 10000;
-
-function saveSettings() {
-    try {
-        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 4), "utf8");
-    } catch (error) {
-        logger.error("Error saving settings:", error);
-    }
-}
 
 module.exports.settings = settings;
 module.exports.saveSettings = saveSettings;
@@ -45,12 +37,18 @@ const bot = new Client({
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMembers,
         GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.GuildModeration,
+        GatewayIntentBits.GuildExpressions,
+        GatewayIntentBits.GuildInvites,
         GatewayIntentBits.DirectMessages,
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildVoiceStates,
     ],
     partials: [
         Partials.Message,
         Partials.Channel,
         Partials.User,
+        Partials.GuildMember
     ],
     shardId: shardId,
     shardCount: shardCount,
@@ -62,11 +60,11 @@ app.use(express.json());
 const rateLimit = require("express-rate-limit");
 
 const shardsLimiter = rateLimit({
-    windowMs: 7 * 1000,
-    max: 1,
+    windowMs: 30 * 1000,
+    max: 15,
     message: {
         ok: false,
-        error: "Too many requests, please try again in 7 seconds."
+        error: "Too many requests, please try again in 5 seconds."
     },
     standardHeaders: true,
     legacyHeaders: false,
@@ -225,6 +223,28 @@ if (shardId === 0 && process.env.CANARY !== "true") {
     });
 
     logger.bigSuccess("Dashboard + API online");
+
+    app.get("/insights", (req, res) => {
+        res.sendFile(path.join(__dirname, "views", "insights.html"));
+    });
+
+    app.get("/api/analytics", shardsLimiter, async (req, res) => {
+        try {
+            const range = req.query.range || "7d";
+            let days = 7;
+            if (range === "30d") days = 30;
+            if (range === "24h") days = 1;
+
+            const cutoff = new Date();
+            cutoff.setDate(cutoff.getDate() - days);
+
+            const data = await Analytics.find({ timestamp: { $gte: cutoff } }).sort({ timestamp: 1 }).lean();
+            res.json({ ok: true, data });
+        } catch (error) {
+            logger.error("Error fetching analytics:", error);
+            res.status(500).json({ ok: false, error: "Internal Server Error" });
+        }
+    });
 }
 
 app.listen(process.env.port, () => {
@@ -241,50 +261,44 @@ async function updateShardMetrics() {
     if (process.env.CANARY === "true") {
         return;
     }
-
     try {
-        const mem = process.memoryUsage();
-        const now = new Date();
-
-        const updateData = {
-            shardID: shardId,
-            wsPing: Math.round(bot.ws.ping || 0),
-            memory: {
-                rss: mem.rss,
-                heapUsed: mem.heapUsed,
-            },
-            uptimeSeconds: Math.floor(process.uptime()),
-            updatedAt: now
-        };
-
-        const currentMinute = now.getMinutes();
-        const currentSecond = now.getSeconds();
-
-        if (currentMinute === 0 && currentSecond <= 30) {
-            const guildCount = bot.guilds.cache.size;
-            updateData.guildCount = guildCount;
-
-            await ShardStats.updateOne(
-                { shardID: shardId },
-                {
-                    $push: {
-                        guildHistory: {
-                            $each: [{ count: guildCount, timestamp: now }],
-                            $slice: -720
-                        }
-                    }
-                }
-            );
-        }
+        const memoryUsage = process.memoryUsage();
+        const guildCount = bot.guilds.cache.size;
+        const userCount = bot.guilds.cache.reduce((acc, guild) => acc + guild.memberCount, 0);
+        const wsPing = bot.ws.ping;
+        const uptimeSeconds = process.uptime();
 
         await ShardStats.findOneAndUpdate(
             { shardID: shardId },
-            updateData,
+            {
+                $set: {
+                    guildCount: guildCount,
+                    userCount: userCount,
+                    wsPing: wsPing,
+                    memory: {
+                        rss: memoryUsage.rss,
+                        heapUsed: memoryUsage.heapUsed
+                    },
+                    uptimeSeconds: uptimeSeconds,
+                    crashed: false,
+                    lastCrash: null,
+                    updatedAt: new Date()
+                },
+                $push: {
+                    guildHistory: {
+                        $each: [{ count: guildCount, timestamp: new Date() }],
+                        $slice: -1000
+                    },
+                    userHistory: {
+                        $each: [{ count: userCount, timestamp: new Date() }],
+                        $slice: -1000
+                    }
+                }
+            },
             { upsert: true }
         );
-
-    } catch (err) {
-        logger.error("Failed to update shard metrics:", err);
+    } catch (error) {
+        logger.error("Failed to update shard metrics:", error);
     }
 }
 
@@ -376,14 +390,21 @@ bot.once(Events.ClientReady, async () => {
         if (shardId == 0) dailyCronJob.start();
     }
 
-    // UNCOMMENT WHEN BOT IS ADDED TO TOP.GG BALDO
-    /* if (shardId === 0 && process.env.CANARY !== "true") {
+    if (shardId === 0 && process.env.CANARY !== "true") {
         setInterval(postStats, 30 * 60 * 1000);
         setTimeout(postStats, 15 * 1000);
-    } */
+    }
 
     updateShardMetrics();
     setInterval(updateShardMetrics, 30 * 1000);
+    analyticsWorker.init(bot, settings);
+
+    if (shardId === 0 && process.env.CANARY !== "true") {
+        const EXPORT_INTERVAL = 29.7 * 24 * 60 * 60 * 1000;
+
+        setInterval(analyticsWorker.exportAnalytics, EXPORT_INTERVAL);
+        logger.info(`Analytics Export scheduled every ${(EXPORT_INTERVAL / (24 * 60 * 60 * 1000)).toFixed(1)} days`);
+    }
 });
 
 bot.on("error", e => logger.error("Discord Error", e));
@@ -398,9 +419,26 @@ bot.on("shardError", (error, shardId) => logger.error(`Shard ${shardId} error:`,
 process.on("unhandledRejection", reason => logger.error("Unhandled Rejection:", reason));
 process.on("uncaughtException", error => logger.error("Uncaught Exception:", error));
 
+let eventsLoaded = 0;
+let eventsFailed = 0;
+const totalEventFiles = Object.keys(events).length;
+
 for (const name in events) {
     const event = events[name];
-    bot.on(event.name, (...args) => event.execute(bot, ...args));
+    try {
+        bot.on(event.name, (...args) => event.execute(bot, ...args));
+        eventsLoaded++;
+    } catch (error) {
+        eventsFailed++;
+        logger.error(`Failed to load event ${name}:`, error);
+    }
+}
+
+const eventLogMsg = `Events: ${eventsLoaded}/${totalEventFiles} loaded successfully${eventsFailed > 0 ? ` (${eventsFailed} failed)` : ''}`;
+if (eventsFailed > 0) {
+    logger.warn(eventLogMsg);
+} else {
+    logger.info(eventLogMsg);
 }
 
 async function getCommands(dir) {
@@ -422,19 +460,31 @@ async function getCommands(dir) {
 
 async function getSlashCommands(dir) {
     const files = await fs.promises.readdir(dir);
+    let loaded = 0;
+    let failed = 0;
 
     for (const file of files) {
         const filepath = path.join(dir, file);
         const stats = await fs.promises.stat(filepath);
 
         if (stats.isDirectory()) {
-            await getSlashCommands(filepath);
+            const result = await getSlashCommands(filepath);
+            loaded += result.loaded;
+            failed += result.failed;
         } else if (stats.isFile() && file.endsWith(".js")) {
-            const command = require(`./${filepath}`);
-            bot.slashCommands.set(command.data.name, command);
-            console.log("\x1b[34m%s\x1b[0m", `${command.data.name}.js loaded!`);
+            try {
+                const command = require(`./${filepath}`);
+                bot.slashCommands.set(command.data.name, command);
+                console.log("\x1b[34m%s\x1b[0m", `${command.data.name}.js loaded!`);
+                loaded++;
+            } catch (error) {
+                logger.error(`Failed to load command ${file}:`, error);
+                failed++;
+            }
         }
     }
+
+    return { loaded, failed };
 }
 
 (async () => {
@@ -444,13 +494,22 @@ async function getSlashCommands(dir) {
 
     logger.neon("-----------------------");
     logger.info("Setting up Slash Commands...");
-    await getSlashCommands("./slashCommands/");
+    const { loaded, failed } = await getSlashCommands("./slashCommands/");
+    const { loaded: cLoaded, failed: cFailed } = await getSlashCommands("./contextCommands/");
+    const total = loaded + failed + cLoaded + cFailed;
+    const cmdLogMsg = `Slash Commands: ${loaded + cLoaded}/${total} loaded successfully${(failed + cFailed) > 0 ? ` (${failed + cFailed} failed)` : ''}`;
+    if ((failed + cFailed) > 0) {
+        logger.warn(cmdLogMsg);
+    } else {
+        logger.info(cmdLogMsg);
+    }
 })();
 
 
 function analyzeGitHubChanges(changedFiles) {
     const hotReloadable = [
         "slashCommands/",
+        "contextCommands/",
         "events/",
         "util/functions.js",
         "views/",
@@ -500,7 +559,7 @@ function analyzeGitHubChanges(changedFiles) {
 async function hotReloadFromGitHub(bot, files) {
     for (const file of files) {
         try {
-            if (file.startsWith("slashCommands/")) {
+            if (file.startsWith("slashCommands/") || file.startsWith("contextCommands/")) {
                 await reloadSlashCommandFromWebhook(bot, file);
             } else if (file.startsWith("events/")) {
                 await reloadEventFromWebhook(bot, file);
@@ -518,9 +577,38 @@ async function reloadSlashCommandFromWebhook(bot, filePath) {
     const commandName = path.basename(filePath, ".js");
     const command = bot.slashCommands.get(commandName);
 
+    if (commandName === 'user' && filePath.includes('slashCommands')) {
+        const contextPath = traverseForCommand(path.join(__dirname, "./contextCommands"), 'viewUser');
+        if (contextPath) {
+            delete require.cache[require.resolve(contextPath)];
+            try {
+                const newContextCommand = require(contextPath);
+                bot.slashCommands.set(newContextCommand.data.name, newContextCommand);
+                logger.info(`Dependent command viewUser.js reloaded`);
+            } catch (error) {
+                logger.error(`Dependent reload failed for viewUser:`, error);
+            }
+        }
+    } else if (commandName === 'warn' && filePath.includes('slashCommands')) {
+        const contextPath = traverseForCommand(path.join(__dirname, "./contextCommands"), 'warnUser');
+        if (contextPath) {
+            delete require.cache[require.resolve(contextPath)];
+            try {
+                const newContextCommand = require(contextPath);
+                bot.slashCommands.set(newContextCommand.data.name, newContextCommand);
+                logger.info(`Dependent command warnUser.js reloaded`);
+            } catch (error) {
+                logger.error(`Dependent reload failed for warnUser:`, error);
+            }
+        }
+    }
+
     if (!command) return;
 
-    const actualPath = traverseForCommand(path.join(__dirname, "./slashCommands"), commandName);
+    let actualPath = traverseForCommand(path.join(__dirname, "./slashCommands"), commandName);
+    if (!actualPath) {
+        actualPath = traverseForCommand(path.join(__dirname, "./contextCommands"), commandName);
+    }
     if (!actualPath) return;
 
     delete require.cache[require.resolve(actualPath)];
@@ -585,3 +673,52 @@ bot.login(process.env.token).catch(e => logger.error(e));
 mongoose.init();
 initI18n();
 
+process.on('message', async (message) => {
+    if (message.type === 'reload-commands') {
+        logger.info('Reloading all commands...');
+        try {
+            for (const [name, command] of bot.slashCommands) {
+                let commandPath = traverseForCommand(path.join(__dirname, './slashCommands'), name);
+                if (!commandPath) {
+                    commandPath = traverseForCommand(path.join(__dirname, './contextCommands'), name);
+                }
+                if (commandPath) {
+                    delete require.cache[require.resolve(commandPath)];
+                    const newCommand = require(commandPath);
+                    bot.slashCommands.set(newCommand.data.name, newCommand);
+                }
+            }
+            logger.info('All commands reloaded successfully');
+        } catch (error) {
+            logger.error('Failed to reload commands:', error);
+        }
+    } else if (message.type === 'reload-events') {
+        logger.info('Reloading all events...');
+        try {
+            const eventsDir = path.join(__dirname, './events');
+            const eventFiles = fs.readdirSync(eventsDir).filter(f => f.endsWith('.js'));
+
+            for (const file of eventFiles) {
+                const eventName = file.split('.')[0];
+                const eventPath = path.join(eventsDir, file);
+
+                const currentEvent = require(eventPath);
+                if (currentEvent.name) {
+                    bot.removeAllListeners(currentEvent.name);
+                }
+
+                delete require.cache[require.resolve(eventPath)];
+
+                const newEvent = require(eventPath);
+                if (newEvent.once) {
+                    bot.once(newEvent.name, (...args) => newEvent.execute(bot, ...args));
+                } else {
+                    bot.on(newEvent.name, (...args) => newEvent.execute(bot, ...args));
+                }
+            }
+            logger.info('All events reloaded successfully');
+        } catch (error) {
+            logger.error('Failed to reload events:', error);
+        }
+    }
+});

@@ -1,9 +1,9 @@
 const { Events, EmbedBuilder, WebhookClient } = require('discord.js');
-const { settings } = require('../index.js');
+const { settings } = require('../util/settingsModule.js');
 const e = require('../data/emoji.js');
 const logger = require('../logger.js');
 const { i18n } = require('../util/i18n.js');
-
+//
 module.exports = {
     name: Events.GuildCreate,
     async execute(bot, guild) {
@@ -20,7 +20,25 @@ module.exports = {
                 logger.warn(`Failed to fetch owner for guild ${guild.id}: ${err.message}`);
             }
 
-            const t = i18n.getFixedT('en');
+            const { Server } = require('../schemas/servers.js');
+
+            const localeMap = {
+                'en-US': 'en', 'en-GB': 'en',
+                'es-ES': 'es', 'es-419': 'es',
+                'pt-BR': 'pt',
+                'sv-SE': 'sv',
+                'zh-CN': 'zh', 'zh-TW': 'zh'
+            };
+
+            const preferredLang = localeMap[guild.preferredLocale] || 'en';
+
+            await Server.findOneAndUpdate(
+                { serverID: guild.id },
+                { language: preferredLang },
+                { upsert: true, new: true }
+            );
+
+            const t = i18n.getFixedT(preferredLang);
 
             const embed = new EmbedBuilder()
                 .setColor(0x00ff00)

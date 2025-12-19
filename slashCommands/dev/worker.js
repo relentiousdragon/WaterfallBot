@@ -2,7 +2,6 @@ const { SlashCommandBuilder, MessageFlags } = require("discord.js");
 const { send: sendHourly } = require("../../hourlyWorker.js");
 const dailyWorker = require("../../dailyWorker.js");
 const settings = require("../../util/settings.json");
-const { db } = require("../../index.js");
 const e = require("../../data/emoji.js");
 //
 module.exports = {
@@ -37,7 +36,8 @@ module.exports = {
 		name: "worker",
 		description: "Manually trigger hourly or daily worker tasks",
 		category: "Dev",
-		permissions: [],
-		botPermissions: []
+		permissions: ["Developer"],
+		botPermissions: [],
+		created: 1764938508
 	}
 };

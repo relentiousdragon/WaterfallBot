@@ -52,6 +52,7 @@ module.exports = {
 
         let shardStatsDocs = await shardStats.find({});
         let totalGuilds = shardStatsDocs.reduce((sum, doc) => sum + (doc.guildCount || 0), 0);
+        let totalUsers = shardStatsDocs.reduce((sum, doc) => sum + (doc.userCount || 0), 0);
 
         const shardServers = bot.guilds.cache.filter(guild => guild.shard.id === shardId).size;
 
@@ -88,7 +89,7 @@ module.exports = {
                 new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(false)
             )
             .addTextDisplayComponents(
-                new TextDisplayBuilder().setContent(`### ${t('commands:botstats.general')}\n${e.globe} ${t('commands:botstats.total_servers', { count: totalGuilds })}\n${e.home} ${t('commands:botstats.shard_servers', { count: shardServers })}`)
+                new TextDisplayBuilder().setContent(`### ${t('commands:botstats.general')}\n${e.globe} ${t('commands:botstats.total_servers', { count: totalGuilds })}\n${e.members} ${t('commands:botstats.total_users', { count: totalUsers })}\n${e.home} ${t('commands:botstats.shard_servers', { count: shardServers })}`)
             )
             .addSeparatorComponents(
                 new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Large).setDivider(true)
@@ -105,8 +106,9 @@ module.exports = {
     help: {
         name: "botstats",
         description: "Display bot statistics",
-        category: "General",
+        category: "Bot",
         permissions: [],
-        botPermissions: []
+        botPermissions: [],
+        created: 1764938508
     }
 };

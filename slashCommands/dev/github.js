@@ -153,6 +153,7 @@ module.exports = {
     analyzeChanges(changedFiles) {
         const hotReloadable = [
             "slashCommands/",
+            "contextCommands/",
             "events/",
             "util/functions.js",
             "views/",
@@ -225,6 +226,32 @@ module.exports = {
         const command = bot.slashCommands.get(commandName);
 
         if (!command) return;
+
+        if (commandName === 'user' && filePath.includes('slashCommands')) {
+            const contextPath = traverseForCommand(path.join(__dirname, "./contextCommands"), 'viewUser');
+            if (contextPath) {
+                delete require.cache[require.resolve(contextPath)];
+                try {
+                    const newContextCommand = require(contextPath);
+                    bot.slashCommands.set(newContextCommand.data.name, newContextCommand);
+                    logger.info(`GitHub Auto-Reload: Dependent command viewUser.js reloaded`);
+                } catch (error) {
+                    logger.error(`Dependent reload failed for viewUser:`, error);
+                }
+            }
+        } else if (commandName === 'warn' && filePath.includes('slashCommands')) {
+            const contextPath = traverseForCommand(path.join(__dirname, "./contextCommands"), 'warnUser');
+            if (contextPath) {
+                delete require.cache[require.resolve(contextPath)];
+                try {
+                    const newContextCommand = require(contextPath);
+                    bot.slashCommands.set(newContextCommand.data.name, newContextCommand);
+                    logger.info(`GitHub Auto-Reload: Dependent command warnUser.js reloaded`);
+                } catch (error) {
+                    logger.error(`Dependent reload failed for warnUser:`, error);
+                }
+            }
+        }
 
         const actualPath = this.traverse(path.join(__dirname, "../../slashCommands"), commandName);
         if (!actualPath) return;
@@ -301,7 +328,8 @@ module.exports = {
         name: "github",
         description: "GitHub repository management commands",
         category: "Dev",
-        permissions: [],
-        botPermissions: []
+        permissions: ["Developer"],
+        botPermissions: [],
+        created: 1764938508
     }
 };

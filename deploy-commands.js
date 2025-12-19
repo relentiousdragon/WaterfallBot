@@ -15,7 +15,7 @@ async function deployCommands() {
         const files = await fs.promises.readdir(dir);
 
         for (const file of files) {
-            const filepath = path.join(dir, file); 
+            const filepath = path.join(dir, file);
             const stats = await fs.promises.stat(filepath);
 
             if (stats.isDirectory()) {
@@ -60,6 +60,7 @@ async function deployCommands() {
     }
 
     await readCommandFiles("./slashCommands");
+    await readCommandFiles("./contextCommands");
 
     const rest = new REST({ version: "10" }).setToken(process.env.token);
 
@@ -80,21 +81,27 @@ async function deployCommands() {
 
         logger.neon("Successfully registered explicit commands in guild 1005773483093012521.");
 
-        /* const dblResponse = await axios.post(
-             `https://discordbotlist.com/api/v1/bots/${process.env.CLIENT_ID}/commands`,
-             publicCommands,
-             {
-                 headers: {
-                     Authorization: `Bot ${process.env.DBL_TOKEN}`,
-                     'Content-Type': 'application/json'
-                 }
-             }
-         ); */
+        if (process.env.CANARY !== "true") {
+            const dblResponse = await axios.post(
+                `https://discordbotlist.com/api/v1/bots/${process.env.CLIENT_ID}/commands`,
+                publicCommands,
+                {
+                    headers: {
+                        Authorization: `Bot ${process.env.DBL_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
 
-        //   logger.neon("\x1b[36m%s\x1b[0m", 'Successfully posted commands to discordbotlist.com:', dblResponse.data);
+            logger.neon("\x1b[36m%s\x1b[0m", 'Successfully posted commands to discordbotlist.com:', dblResponse.data);
+        }
     } catch (error) {
         logger.error(error);
     }
+}
+
+if (require.main === module) {
+    deployCommands();
 }
 
 module.exports = { deployCommands };

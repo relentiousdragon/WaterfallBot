@@ -65,8 +65,37 @@ async function handleNonCommandInteractions(bot, interaction, userId, users, ale
     }
 }
 
-async function handleButtonInteraction(interaction, users, settings) {
-    //
+async function handleButtonInteraction(bot, interaction, users, settings, logger, t) {
+    if (interaction.customId.startsWith('search_')) {
+        const { handleSearchPagination } = require('../slashCommands/gen/search.js');
+        await handleSearchPagination(interaction, t);
+        return;
+    }
+    if (interaction.customId.startsWith('dictionary_pronounce_')) {
+        const dictionary = require('../slashCommands/gen/dictionary.js');
+        await dictionary.handlePronunciationButton(interaction, settings, logger, t);
+        return;
+    }
+    if (interaction.customId.startsWith('warn_remove')) {
+        const warn = require('../slashCommands/mod/warn.js');
+        await warn.handleRemoveWarn(bot, interaction, t, logger, interaction.customId.split('_')[2], interaction.customId.split('_')[3]);
+        return;
+    }
+    if (interaction.customId.startsWith('c4_')) {
+        const connect4 = require('../slashCommands/games/connect4.js');
+        await connect4.handleButton(bot, interaction, t, logger);
+        return;
+    }
+    if (interaction.customId.startsWith('rps_playagain_')) {
+        const rps = require('../slashCommands/games/rps.js');
+        await rps.handlePlayAgain(bot, interaction, t, logger);
+        return;
+    }
+    if (interaction.customId.startsWith('rps_')) {
+        const rps = require('../slashCommands/games/rps.js');
+        await rps.handleButton(bot, interaction, t, logger);
+        return;
+    }
 }
 
 async function handleSelectMenuInteraction(bot, interaction, settings, logger) {
@@ -135,15 +164,18 @@ async function handleSelectMenuInteraction(bot, interaction, settings, logger) {
 
             const betaBadge = cmd.beta ? `${e.badge_beta1}${e.badge_beta2} ` : "";
 
+            // Permission display disabled for now, might remove in the future though.
+            /*
             let permText = "";
             if (cmd.permissions?.length > 0) {
                 permText = `${e.reply_cont_cont}   ${e.member} **${t('events:handlers.user_perms')}** ${cmd.permissions.join(", ")}`;
             }
-
+ 
             let botPermText = "";
             if ((isAdmin || isModerator || isDev) && cmd.botPermissions?.length > 0) {
                 botPermText = `${e.reply_cont_cont}   ${e.config} **${t('events:handlers.bot_perms')}** ${cmd.botPermissions.join(", ")}`;
             }
+            */
 
             const subcommands = cmd.data.options?.filter(opt =>
                 opt.constructor?.name === "SlashCommandSubcommandBuilder" ||
@@ -151,7 +183,7 @@ async function handleSelectMenuInteraction(bot, interaction, settings, logger) {
             ) || [];
 
             if (subcommands.length > 0) {
-                commandList += `${emoji} ${betaBadge}**/${cmd.name}** - ${t(`commands:${cmd.name}.description`, { defaultValue: cmd.description })}\n`;
+                commandList += `${emoji} **/${cmd.name}** ${betaBadge} - ${t(`commands:${cmd.name}.description`, { defaultValue: cmd.description })}\n`;
 
                 for (let j = 0; j < subcommands.length; j++) {
                     const sub = subcommands[j];
@@ -160,12 +192,14 @@ async function handleSelectMenuInteraction(bot, interaction, settings, logger) {
                     commandList += `${treePrefix}${subEmoji} **${sub.name}** - ${sub.description}\n`;
                 }
 
-                if (permText) commandList += `${permText}\n`;
-                if (botPermText) commandList += `${botPermText}\n`;
+                // permission display disabled
+                // if (permText) commandList += `${permText}\n`;
+                // if (botPermText) commandList += `${botPermText}\n`;
             } else {
-                commandList += `${emoji} ${betaBadge}**/${cmd.name}** - ${t(`commands:${cmd.name}.description`, { defaultValue: cmd.description })}\n`;
-                if (permText) commandList += `${permText}\n`;
-                if (botPermText) commandList += `${botPermText}\n`;
+                commandList += `${emoji} **/${cmd.name}** ${betaBadge} - ${t(`commands:${cmd.name}.description`, { defaultValue: cmd.description })}\n`;
+                // permission display disabled
+                // if (permText) commandList += `${permText}\n`;
+                // if (botPermText) commandList += `${botPermText}\n`;
             }
         }
 
@@ -208,8 +242,10 @@ async function handleSelectMenuInteraction(bot, interaction, settings, logger) {
                     let emojiObj;
                     if (cat === "General") emojiObj = parseEmoji(e.compass_green);
                     else if (cat === "Dev") emojiObj = parseEmoji(e.config);
-                    else if (cat === "Moderation") emojiObj = parseEmoji(e.bughunter);
+                    else if (cat === "Utility") emojiObj = parseEmoji(e.archive);
+                    else if (cat === "Moderation") emojiObj = parseEmoji(e.blurple_mod);
                     else if (cat === "Bot") emojiObj = parseEmoji(e.blurple_bot);
+                    else if (cat === "Games") emojiObj = parseEmoji(e.discord_orbs);
                     else emojiObj = parseEmoji(e.info);
 
                     return {
@@ -254,12 +290,20 @@ async function handleSelectMenuInteraction(bot, interaction, settings, logger) {
     }
 }
 
+async function handleModalInteraction(bot, interaction, settings, logger, t) {
+    if (interaction.customId.startsWith('warn_modal_')) {
+        const warnUser = require('../contextCommands/warnUser.js');
+        await warnUser.handleModal(bot, interaction, t, logger);
+    }
+}
+
 function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
-
+//
 module.exports = {
     handleNonCommandInteractions,
     handleButtonInteraction,
-    handleSelectMenuInteraction
+    handleSelectMenuInteraction,
+    handleModalInteraction
 };

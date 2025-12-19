@@ -43,3 +43,23 @@ manager.spawn({ amount: totalShards, delay: 5000 })
         logger.bigSuccess(`Machine handling shard ${shardId} launched`);
     })
     .catch(err => logger.fatal("ShardManager spawn failed: " + err));
+
+function gracefulShutdown(signal) {
+    logger.warn(`${signal} - shutting down shards...`);
+    isShuttingDown = true;
+    manager.shards.forEach(shard => {
+        shard.kill();
+    });
+    process.exit(0);
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+process.on('message', (message) => {
+    if (message.type === 'reload-commands') {
+        manager.shards.forEach(shard => shard.send({ type: 'reload-commands' }));
+    } else if (message.type === 'reload-events') {
+        manager.shards.forEach(shard => shard.send({ type: 'reload-events' }));
+    }
+});

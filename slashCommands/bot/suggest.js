@@ -85,7 +85,7 @@ module.exports = {
 
         } catch (error) {
             logger.error("Error executing command:", error);
-            return interaction.editReply({ content: `${e.pixel_cross} ${t('common.error')}`, flags: MessageFlags.Ephemeral, components: [], embeds: [] });
+            return interaction.editReply({ content: `${e.pixel_cross} ${t('common:error')}`, flags: MessageFlags.Ephemeral, components: [], embeds: [] });
         }
     },
     help: {
@@ -93,6 +93,7 @@ module.exports = {
         description: "Suggest Commands or Functions for the Bot",
         category: "Bot",
         permissions: [],
-        botPermissions: []
+        botPermissions: [],
+        created: 1764938508
     }
 };

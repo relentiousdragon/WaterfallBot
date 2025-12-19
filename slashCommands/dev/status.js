@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, MessageFlags, EmbedBuilder } = require("discord.js");
-const { settings, saveSettings } = require("../../index.js");
+const { settings, saveSettings } = require("../../util/settingsModule.js");
 const e = require("../../data/emoji.js");
 const logger = require("../../logger.js");
 //
@@ -85,7 +85,8 @@ module.exports = {
         name: "status",
         description: "Show current performance metrics",
         category: "Dev",
-        permissions: [],
-        botPermissions: []
+        permissions: ["Developer"],
+        botPermissions: [],
+        created: 1764938508
     }
 };

@@ -1,24 +1,34 @@
 {
     "name": "waterfallbot",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "Waterfall Discord Bot",
     "main": "bot.js",
     "scripts": {
         "start": "node bot.js",
         "dev": "node bot.js",
         "shard": "node shardManager.js",
-        "deploy": "node deploy-commands.js"
+        "deploy": "node deploy-commands.js",
+        "check:translations": "node scripts/check-translations.js",
+        "generate:cmd-docs": "node scripts/generate-commands-docs.js"
     },
     "author": "DevSiege Studios",
     "license": "GPL-3.0",
     "dependencies": {
+        "@discordjs/opus": "^0.10.0",
+        "@discordjs/voice": "^0.19.0",
+        "@snazzah/davey": "^0.1.8",
+        "@wolfram-alpha/wolfram-alpha-api": "^23.1004.144821-RELEASE",
         "axios": "^1.7.9",
+        "canvas": "^3.2.0",
         "chalk": "^4.1.2",
         "cron": "^3.1.7",
         "discord.js": "^14.17.3",
         "dotenv": "^16.4.7",
         "express": "^4.21.2",
         "express-rate-limit": "^7.5.0",
+        "ffmpeg-static": "^5.3.0",
+        "gifencoder": "^2.0.1",
+        "google-tts-api": "^2.0.2",
         "i18next": "^25.6.3",
         "i18next-fs-backend": "^2.6.1",
         "millify": "^6.1.0",
@@ -26,7 +36,9 @@
         "mongoose": "^8.9.3",
         "ms": "^2.1.3",
         "node-fetch": "^2.7.0",
-        "require-all": "^3.0.0"
+        "opusscript": "^0.1.1",
+        "require-all": "^3.0.0",
+        "serpapi": "^2.2.1"
     },
     "engines": {
         "node": ">=22.0.0"

@@ -135,7 +135,8 @@ module.exports = {
         name: "mail-send",
         description: "Send mail to a user or everyone",
         category: "Dev",
-        permissions: [],
-        botPermissions: []
+        permissions: ["Developer"],
+        botPermissions: [],
+        created: 1764938508
     }
 };

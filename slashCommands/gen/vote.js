@@ -60,6 +60,7 @@ module.exports = {
         description: "Vote for the bot!",
         category: "General",
         permissions: [],
-        botPermissions: []
+        botPermissions: [],
+        created: 1764938508
     }
 };

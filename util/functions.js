@@ -2,7 +2,6 @@ const Discord = require("discord.js");
 const { millify } = require("millify");
 const axios = require("axios");
 const logger = require("../logger.js");
-async function sleep(ms) { return new Promise(res => setTimeout(res, ms)); }
 //
 module.exports = {
     bet_check: function (bet) {
@@ -22,7 +21,7 @@ module.exports = {
         //return total;
     },
     abbr: function formatNumber(number) {
-        if (number < 1e6) {
+        if (number < 1e8) {
             return number.toLocaleString();
         } else {
             return millify(number, { precision: 2, lowercase: true });
@@ -91,5 +90,8 @@ module.exports = {
             return { name: match[1], id: match[2] };
         }
         return emojiString;
+    },
+    sleep: function (ms) {
+        return new Promise(res => setTimeout(res, ms));
     }
 };

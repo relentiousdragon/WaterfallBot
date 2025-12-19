@@ -39,146 +39,166 @@ module.exports = {
     explicit: false,
     async execute(bot, interaction, funcs, settings, logger, t) {
         try {
-            await interaction.deferReply();
+            await interaction.reply({ content: `${e.loading} ${t("common:loading")}` });
 
             const target = interaction.options.getUser('target') || interaction.user;
-            const user = await bot.rest.get(Routes.user(target.id)).catch(() => null);
-
-            if (!user) return interaction.editReply({ content: `${e.pixel_cross} ${t('commands:user.not_found')}`, flags: MessageFlags.Ephemeral });
-
-            const flags = user.public_flags !== null ? user.public_flags : user.flags;
-            let badges = translateFlags(flags);
-
-            let badgeArray = badges ? badges.split(' ') : [];
-
-            let botBadges = '';
-            if (settings.devs.includes(target.id)) {
-                botBadges = `${e.badge_dev1}${e.badge_dev2}${e.badge_dev3}`;
-            } else if (settings.moderators.includes(target.id)) {
-                botBadges = `${e.badge_moderator1}${e.badge_moderator2}${e.badge_moderator3}${e.badge_moderator4}${e.badge_moderator5}`;
-            } else if (settings.testers.includes(target.id)) {
-                botBadges = `${e.badge_tester1}${e.badge_tester2}${e.badge_tester3}${e.badge_tester4}`;
-            }
-
-            let isBoosting = false;
-            let member;
-            if (interaction.guild) {
-                member = interaction.options.getMember('target') || interaction.member;
-                if (member && (member.premiumSince || member.premiumSinceTimestamp)) {
-                    isBoosting = true;
-                }
-            }
-
-            //let titleSuffix = ' Information';
-            let titleSuffix = '';
-            if (target.bot) {
-                let verified = false;
-                if (flags & 65536) {
-                    verified = true;
-                }
-
-                titleSuffix = verified
-                    ? ` ${e.discord_verifiedApp1}${e.discord_verifiedApp2}${e.discord_verifiedApp3}`
-                    : ` ${e.discord_app1}${e.discord_app2}`;
-            }
-
-            let title = `${t('commands:user.about', { user: `[${target.displayName}](https://discord.com/users/${target.id})` })}${isBoosting ? ` ${e.blurple_boost}` : `${titleSuffix}`}`;
-
-            if (target.id === bot.user.id) {
-                title += `\n-# ${t('commands:user.waterfall_tag')} ${e.verified_check_bw}`;
-            }
-
-            if (botBadges) {
-                title += `\n-# ${botBadges}`;
-            }
-
-            let usernameDisplay = target.username;
-            if (target.discriminator && target.discriminator !== '0') {
-                usernameDisplay += `#${target.discriminator}`;
-            }
-
-            let accentColor = 0x5865F2;
-            if (member && member.displayColor !== 0) {
-                accentColor = member.displayColor;
-            } else if (user.accent_color) {
-                accentColor = user.accent_color;
-            }
-
-            const section = new SectionBuilder()
-                .setThumbnailAccessory(new ThumbnailBuilder().setURL(target.displayAvatarURL({ size: 2048 })))
-                .addTextDisplayComponents(
-                    new TextDisplayBuilder().setContent(`# ${title}`)
-                );
-
-            const container = new ContainerBuilder()
-                .setAccentColor(accentColor)
-                .addSectionComponents(section)
-                .addSeparatorComponents(
-                    new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
-                );
-
-            let description = `### ${t('commands:user.username_id')}\n${usernameDisplay} | ${target.id}\n\n### ${t('commands:user.created_date')}\n<t:${Math.floor(target.createdTimestamp / 1000)}:F>`;
-
-            let clanTag;
-            if (user.clan) {
-                clanTag = user.clan.tag;
-            }
-
-            if (clanTag) {
-                description += `\n\n### ${t('commands:user.clan')}\n\`[${clanTag}]\``;
-            }
-
-            if (badgeArray.length) {
-                description += `\n\n### ${t('commands:user.badges')}\n${badgeArray.join(' ')}`;
-            }
-
-            if (interaction.guild && member) {
-                description += `\n\n### ${t('commands:user.joined_date')}\n<t:${Math.floor(member.joinedTimestamp / 1000)}:F>`;
-            }
-
-            container.addTextDisplayComponents(
-                new TextDisplayBuilder().setContent(description)
-            );
-
-            const row = new ActionRowBuilder()
-                .addComponents(
-                    new ButtonBuilder()
-                        .setLabel(t('commands:user.avatar_link'))
-                        .setStyle(ButtonStyle.Link)
-                        .setURL(target.displayAvatarURL({ size: 2048 }))
-                );
-
-            if (user.banner) {
-                const bannerURL = `https://cdn.discordapp.com/banners/${user.id}/${user.banner}.${user.banner.startsWith('a_') ? 'gif' : 'png'}?size=2048`;
-
-                container.addMediaGalleryComponents(
-                    new MediaGalleryBuilder().addItems(
-                        new MediaGalleryItemBuilder().setURL(bannerURL)
-                    )
-                );
-
-                row.addComponents(
-                    new ButtonBuilder()
-                        .setLabel(t('commands:user.banner_link'))
-                        .setStyle(ButtonStyle.Link)
-                        .setURL(bannerURL)
-                );
-            }
-
-            container.addActionRowComponents(row);
-
-            return interaction.editReply({ components: [container], flags: MessageFlags.IsComponentsV2 });
+            await generateUserProfile(bot, interaction, target, t, settings);
 
         } catch (error) {
             logger.error("Error executing command:", error);
-            return interaction.editReply({ content: `${e.pixel_cross} ${t('common.error')}`, flags: MessageFlags.Ephemeral });
+            return interaction.editReply({ content: `${e.pixel_cross} ${t('common:error')}`, flags: MessageFlags.Ephemeral });
         }
     },
+    generateUserProfile,
     help: {
         name: "user",
         description: "Get information about a user",
         category: "General",
         permissions: [],
-        botPermissions: []
+        botPermissions: [],
+        created: 1764938508
     }
 };
+
+async function generateUserProfile(bot, interaction, target, t, settings) {
+    const user = await bot.rest.get(Routes.user(target.id)).catch(() => null);
+
+    if (!user) return interaction.editReply({ content: `${e.pixel_cross} ${t('commands:user.not_found')}`, flags: MessageFlags.Ephemeral });
+
+    const flags = user.public_flags !== null ? user.public_flags : user.flags;
+    let badges = translateFlags(flags);
+
+    let badgeArray = badges ? badges.split(' ') : [];
+
+    let botBadges = '';
+    if (settings.devs.includes(target.id)) {
+        botBadges = `${e.badge_dev1}${e.badge_dev2}${e.badge_dev3}`;
+    } else if (settings.moderators.includes(target.id)) {
+        botBadges = `${e.badge_moderator1}${e.badge_moderator2}${e.badge_moderator3}${e.badge_moderator4}${e.badge_moderator5}`;
+    } else if (settings.testers.includes(target.id)) {
+        botBadges = `${e.badge_tester1}${e.badge_tester2}${e.badge_tester3}${e.badge_tester4}`;
+    }
+
+    let isBoosting = false;
+    let member;
+    if (interaction.guild) {
+        member = interaction.guild.members.cache.get(target.id) || await interaction.guild.members.fetch(target.id).catch(() => null);
+        if (member && (member.premiumSince || member.premiumSinceTimestamp)) {
+            isBoosting = true;
+        }
+    }
+
+    //let titleSuffix = ' Information';
+    let titleSuffix = '';
+    if (target.bot) {
+        let verified = false;
+        if (flags & 65536) {
+            verified = true;
+        }
+
+        titleSuffix = verified
+            ? ` ${e.discord_verifiedApp1}${e.discord_verifiedApp2}${e.discord_verifiedApp3}`
+            : ` ${e.discord_app1}${e.discord_app2}`;
+    }
+
+    let title = `${t('commands:user.about', { user: `[${target.displayName}](https://discord.com/users/${target.id})` })}${isBoosting ? ` ${e.blurple_boost}` : `${titleSuffix}`}`;
+
+    if (target.id === bot.user.id) {
+        title += `\n-# ${t('commands:user.waterfall_tag')} ${e.verified_check_bw}`;
+    }
+
+    if (botBadges) {
+        title += `\n-# ${botBadges}`;
+    }
+
+    let usernameDisplay = target.username;
+    if (target.discriminator && target.discriminator !== '0') {
+        usernameDisplay += `#${target.discriminator}`;
+    }
+
+    let accentColor = 0x5865F2;
+    if (member && member.displayColor !== 0) {
+        accentColor = member.displayColor;
+    } else if (user.accent_color) {
+        accentColor = user.accent_color;
+    }
+
+    const section = new SectionBuilder()
+        .setThumbnailAccessory(new ThumbnailBuilder().setURL(target.displayAvatarURL({ size: 2048 })))
+        .addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(`# ${title}`)
+        );
+
+    const container = new ContainerBuilder()
+        .setAccentColor(accentColor)
+
+    if (user.banner && (target.id == bot.user.id)) {
+        const bannerURL = `https://cdn.discordapp.com/banners/${user.id}/${user.banner}.${user.banner.startsWith('a_') ? 'gif' : 'png'}?size=2048`;
+        container.addMediaGalleryComponents(
+            new MediaGalleryBuilder().addItems(
+                new MediaGalleryItemBuilder().setURL(bannerURL)
+            )
+        );
+    }
+
+    container.addSectionComponents(section)
+    container.addSeparatorComponents(
+        new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
+    );
+    let description = `### ${t('commands:user.username_id')}\n${usernameDisplay} | ${target.id}\n\n### ${t('commands:user.created_date')}\n<t:${Math.floor(target.createdTimestamp / 1000)}:F>`;
+
+    let clanTag;
+    if (user.clan) {
+        clanTag = user.clan.tag;
+    }
+
+    if (clanTag) {
+        description += `\n\n### ${t('commands:user.clan')}\n\`[${clanTag}]\``;
+    }
+
+    if (badgeArray.length) {
+        description += `\n\n### ${t('commands:user.badges')}\n${badgeArray.join(' ')}`;
+    }
+
+    if (interaction.guild && member) {
+        description += `\n\n### ${t('commands:user.joined_date')}\n<t:${Math.floor(member.joinedTimestamp / 1000)}:F>`;
+    }
+
+    container.addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(description)
+    );
+
+    container.addSeparatorComponents(
+        new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
+    );
+
+    const row = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setLabel(t('commands:user.avatar_link'))
+                .setStyle(ButtonStyle.Link)
+                .setURL(target.displayAvatarURL({ size: 2048 }))
+        );
+    let bannerURL;
+    if (user.banner) {
+        bannerURL = `https://cdn.discordapp.com/banners/${user.id}/${user.banner}.${user.banner.startsWith('a_') ? 'gif' : 'png'}?size=2048`;
+
+        if (target.id != bot.user.id) {
+            container.addMediaGalleryComponents(
+                new MediaGalleryBuilder().addItems(
+                    new MediaGalleryItemBuilder().setURL(bannerURL)
+                )
+            );
+        }
+        row.addComponents(
+            new ButtonBuilder()
+                .setLabel(t('commands:user.banner_link'))
+                .setStyle(ButtonStyle.Link)
+                .setURL(bannerURL)
+        );
+    }
+
+    container.addActionRowComponents(row);
+
+    return interaction.editReply({ content: null, components: [container], flags: MessageFlags.IsComponentsV2 });
+}

@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, MessageFlags, EmbedBuilder } = require("discord.js");
+const { SlashCommandBuilder, MessageFlags, EmbedBuilder, WebhookClient } = require("discord.js");
 const users = require("../../schemas/users.js");
 const { Server } = require("../../schemas/servers.js");
 const e = require("../../data/emoji.js");
@@ -113,6 +113,21 @@ module.exports = {
                     } else {
                         baldino = " I am not in that server.";
                     }
+
+                    if (serverData && serverData.logs) {
+                        for (const logType in serverData.logs) {
+                            const logConfig = serverData.logs[logType];
+                            if (logConfig && logConfig.webhook && logConfig.webhook.length === 2) {
+                                try {
+                                    const webhook = new WebhookClient({ id: logConfig.webhook[0], token: logConfig.webhook[1] });
+                                    await webhook.delete("Server Banned by Developer");
+                                } catch (err) {
+                                    //
+                                }
+                            }
+                        }
+                        await Server.findOneAndUpdate({ serverID: serverId }, { $unset: { logs: "" } });
+                    }
                 }
 
                 const logEmbed = new EmbedBuilder()
@@ -137,7 +152,8 @@ module.exports = {
         name: "_ban",
         description: "Ban management",
         category: "Dev",
-        permissions: ["moderator/dev"],
-        botPermissions: []
+        permissions: ["moderator"],
+        botPermissions: [],
+        created: 1764938508
     }
 };

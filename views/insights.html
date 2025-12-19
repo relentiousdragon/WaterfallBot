@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waterfall Insights</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <style>
+        :root {
+            --bg-dark: #05050a;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-hover: rgba(255, 255, 255, 0.08);
+
+            --primary: #3b82f6;
+            --secondary: #5865f2;
+            --accent: #8b5cf6;
+
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+
+            --card-radius: 16px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        .baldground {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .baldground::before,
+        .baldground::after {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            animation: gradientShift 15s ease infinite;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+        }
+
+        .baldground::before {
+            background: radial-gradient(circle at 20% 20%, var(--primary) 0%, transparent 50%);
+            top: -50%;
+            left: -50%;
+        }
+
+        .baldground::after {
+            background: radial-gradient(circle at 80% 80%, var(--secondary) 0%, transparent 50%);
+            bottom: -50%;
+            right: -50%;
+            animation-delay: -7.5s;
+        }
+
+        @keyframes gradientShift {
+
+            0%,
+            100% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            25% {
+                transform: translate(5%, 5%) scale(1.1);
+            }
+
+            50% {
+                transform: translate(-3%, 7%) scale(0.9);
+            }
+
+            75% {
+                transform: translate(7%, -3%) scale(1.05);
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-dark);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--glass-border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
+        .container {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .navbar {
+            position: sticky;
+            top: 20px;
+            z-index: 100;
+            backdrop-filter: blur(16px);
+            background: rgba(5, 5, 10, 0.6);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            margin: 20px auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            max-width: 1400px;
+            animation: slideDown 0.8s ease-out;
+        }
+
+        .waterfall {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .waterfall i {
+            font-size: 1.4rem;
+            color: var(--primary);
+            -webkit-text-fill-color: var(--primary);
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .ctrl-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            color: var(--text-muted);
+            padding: 8px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 500;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .ctrl-btn:hover,
+        .ctrl-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+        }
+
+        .stats-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+            animation: fadeInUp 0.8s ease-out 0.2s backwards;
+        }
+
+        .stat-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            padding: 24px;
+            border-radius: var(--card-radius);
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition);
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: var(--text-main);
+            margin-bottom: 16px;
+        }
+
+        .stat-icon.blue {
+            color: var(--primary);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.15);
+        }
+
+        .stat-icon.blurple {
+            color: var(--secondary);
+            box-shadow: 0 0 20px rgba(88, 101, 242, 0.15);
+        }
+
+        .stat-icon.purple {
+            color: var(--accent);
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.15);
+        }
+
+        .stat-icon.green {
+            color: var(--success);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .trend-indicator {
+            font-size: 0.75rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .trend-up {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        .trend-down {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error);
+        }
+
+        .trend-neutral {
+            background: rgba(148, 163, 184, 0.1);
+            color: var(--text-muted);
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 40px;
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        .charts-grid>* {
+            min-width: 0;
+        }
+
+        .chart-container {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--card-radius);
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            min-height: 400px;
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+            animation: fadeInUp 0.8s ease-out 0.4s backwards;
+        }
+
+        .chart-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-left: 10px;
+            border-left: 4px solid var(--primary);
+        }
+
+        canvas {
+            max-width: 100% !important;
+            height: auto !important;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            width: 100%;
+            height: 350px;
+        }
+
+        .error-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 1001;
+            transform: translateX(150%);
+            transition: transform 0.3s ease;
+            max-width: 400px;
+            backdrop-filter: blur(10px);
+        }
+
+        .error-notification.show {
+            transform: translateX(0);
+        }
+
+        .error-notification i {
+            font-size: 1.2rem;
+        }
+
+        .error-content {
+            flex: 1;
+        }
+
+        .error-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .error-message {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .error-close {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 1.2rem;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .top-list {
+            list-style: none;
+        }
+
+        .top-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .top-item:last-child {
+            border-bottom: none;
+        }
+
+        .top-rank {
+            font-weight: 700;
+            color: var(--primary);
+            width: 30px;
+        }
+
+        .top-name {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .top-count {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-muted);
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .stats-overview {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="baldground"></div>
+
+    <nav class="navbar">
+        <div class="waterfall">
+            <i class="fas fa-chart-line"></i>
+            <span>Waterfall Insights</span>
+        </div>
+        <div class="controls">
+            <button class="ctrl-btn" onclick="loadData('24h')">24h</button>
+            <button class="ctrl-btn active" onclick="loadData('7d')">7d</button>
+            <button class="ctrl-btn" onclick="loadData('30d')">30d</button>
+        </div>
+    </nav>
+
+    <main class="container">
+
+        <div class="stats-overview">
+            <div class="stat-card">
+                <div class="stat-icon blue"><i class="fas fa-comment-alt"></i></div>
+                <div class="stat-value" id="total-messages">--</div>
+                <div class="stat-label">Messages <span id="messages-trend" class="trend-indicator"></span></div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon blurple"><i class="fas fa-mouse-pointer"></i></div>
+                <div class="stat-value" id="total-interactions">--</div>
+                <div class="stat-label">Interactions <span id="interactions-trend" class="trend-indicator"></span></div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon purple"><i class="fas fa-terminal"></i></div>
+                <div class="stat-value" id="top-command">--</div>
+                <div class="stat-label">Top Command</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon green"><i class="fas fa-server"></i></div>
+                <div class="stat-value" id="total-guilds">--</div>
+                <div class="stat-label">Total Guilds <span id="guilds-trend" class="trend-indicator"></span></div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon green"><i class="fas fa-users"></i></div>
+                <div class="stat-value" id="total-users">--</div>
+                <div class="stat-label">Total Users <span id="users-trend" class="trend-indicator"></span></div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-container">
+                <h3 class="chart-title">Activity Over Time</h3>
+                <div class="chart-wrapper">
+                    <canvas id="activityChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-container">
+                <h3 class="chart-title">Top Commands</h3>
+                <div class="chart-wrapper">
+                    <canvas id="commandsChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-container">
+                <h3 class="chart-title">Command Distribution</h3>
+                <div class="chart-wrapper">
+                    <canvas id="distributionChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-container">
+                <h3 class="chart-title">Guild Growth</h3>
+                <div class="chart-wrapper">
+                    <canvas id="guildGrowthChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-container" style="grid-column: span 2;">
+                <h3 class="chart-title">User Growth</h3>
+                <div class="chart-wrapper">
+                    <canvas id="userGrowthChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div id="error-notification" class="error-notification">
+            <i class="fas fa-exclamation-circle"></i>
+            <div class="error-content">
+                <div class="error-title">Error</div>
+                <div class="error-message" id="error-message">Something went wrong</div>
+            </div>
+            <button class="error-close" onclick="closeError()"><i class="fas fa-times"></i></button>
+        </div>
+    </main>
+
+    <script>
+        let activityChartInstance = null;
+        let commandsChartInstance = null;
+        let distributionChartInstance = null;
+        let currentRange = '7d';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData('7d');
+            setInterval(() => loadData(currentRange), 30000);
+        });
+
+        async function loadData(range) {
+            currentRange = range;
+            document.querySelectorAll('.ctrl-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.innerText.toLowerCase() === range) btn.classList.add('active');
+            });
+
+            try {
+                const response = await fetch(`/api/analytics?range=${range}`);
+
+                if (response.status === 429) {
+                    const retryAfter = response.headers.get('Retry-After') || 5;
+                    showError(`Rate limited. Retrying in ${retryAfter}s...`, "Rate Limit");
+                    return;
+                }
+
+                const result = await response.json();
+
+                if (!result.ok) throw new Error(result.error);
+
+                processData(result.data);
+            } catch (error) {
+                console.error("Failed to load data:", error);
+                showError("Failed to load analytics data.");
+            }
+        }
+
+        function showError(message, title = "Error") {
+            const notification = document.getElementById('error-notification');
+            document.querySelector('.error-title').textContent = title;
+            document.getElementById('error-message').textContent = message;
+            notification.classList.add('show');
+
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 5000);
+        }
+
+        function closeError() {
+            document.getElementById('error-notification').classList.remove('show');
+        }
+
+        function processData(data) {
+            if (!data || data.length === 0) return;
+
+            let totalMessages = 0;
+            let totalInteractions = 0;
+            let commandUsage = {};
+
+            const labels = [];
+            const messageData = [];
+            const interactionData = [];
+
+            const now = new Date();
+            const oneDay = 24 * 60 * 60 * 1000;
+            let currentPeriodMessages = 0;
+            let previousPeriodMessages = 0;
+            let currentPeriodInteractions = 0;
+            let previousPeriodInteractions = 0;
+
+            let trendCutoff = new Date();
+            if (currentRange === '24h') trendCutoff.setTime(now.getTime() - oneDay);
+            else if (currentRange === '7d') trendCutoff.setTime(now.getTime() - (7 * oneDay));
+            else if (currentRange === '30d') trendCutoff.setTime(now.getTime() - (30 * oneDay));
+
+            let previousCutoff = new Date(trendCutoff.getTime() - (trendCutoff.getTime() - (now.getTime() - (currentRange === '24h' ? oneDay : currentRange === '7d' ? 7 * oneDay : 30 * oneDay))));
+
+
+            data.forEach(entry => {
+                const date = new Date(entry.timestamp);
+                labels.push(date.toLocaleDateString() + ' ' + date.getHours() + ':00');
+
+                totalMessages += entry.messages || 0;
+                totalInteractions += entry.interactions || 0;
+
+                messageData.push(entry.messages || 0);
+                interactionData.push(entry.interactions || 0);
+
+                if (entry.commandsUsage) {
+                    for (const [cmd, count] of Object.entries(entry.commandsUsage)) {
+                        commandUsage[cmd] = (commandUsage[cmd] || 0) + count;
+                    }
+                }
+            });
+
+            if (data.length >= 2) {
+                const midPoint = Math.floor(data.length / 2);
+                const firstHalf = data.slice(0, midPoint);
+                const secondHalf = data.slice(midPoint);
+
+                previousPeriodMessages = firstHalf.reduce((acc, cur) => acc + (cur.messages || 0), 0);
+                currentPeriodMessages = secondHalf.reduce((acc, cur) => acc + (cur.messages || 0), 0);
+
+                previousPeriodInteractions = firstHalf.reduce((acc, cur) => acc + (cur.interactions || 0), 0);
+                currentPeriodInteractions = secondHalf.reduce((acc, cur) => acc + (cur.interactions || 0), 0);
+
+                updateTrend('messages-trend', currentPeriodMessages, previousPeriodMessages);
+                updateTrend('interactions-trend', currentPeriodInteractions, previousPeriodInteractions);
+            }
+
+
+            document.getElementById('total-messages').innerText = totalMessages.toLocaleString();
+            document.getElementById('total-interactions').innerText = totalInteractions.toLocaleString();
+
+            const sortedCommands = Object.entries(commandUsage).sort((a, b) => b[1] - a[1]);
+            document.getElementById('top-command').innerText = sortedCommands.length > 0 ? sortedCommands[0][0] : '--';
+
+            const top6 = sortedCommands.slice(0, 6);
+            const rest = sortedCommands.slice(6);
+
+            let chartData = [...top6];
+            let otherTooltipData = null;
+
+            if (rest.length > 0) {
+                const otherCount = rest.reduce((acc, curr) => acc + curr[1], 0);
+                chartData.push(['Other', otherCount]);
+
+                const next4 = rest.slice(0, 4);
+                const remaining = rest.slice(4).length;
+                otherTooltipData = {
+                    next4: next4,
+                    remaining: remaining
+                };
+            }
+
+            updateActivityChart(labels, messageData, interactionData);
+            updateCommandsChart(chartData, otherTooltipData);
+            updateDistributionChart(chartData, otherTooltipData);
+
+            fetchGrowthData(currentRange);
+        }
+
+        function updateTrend(elementId, current, previous) {
+            const element = document.getElementById(elementId);
+            if (previous === 0) {
+                element.innerHTML = '<i class="fas fa-minus"></i> 0%';
+                element.className = 'trend-indicator trend-neutral';
+                return;
+            }
+
+            const change = ((current - previous) / previous) * 100;
+            const formatted = Math.abs(change).toFixed(1) + '%';
+
+            if (change > 0) {
+                element.innerHTML = `<i class="fas fa-arrow-up"></i> ${formatted}`;
+                element.className = 'trend-indicator trend-up';
+            } else if (change < 0) {
+                element.innerHTML = `<i class="fas fa-arrow-down"></i> ${formatted}`;
+                element.className = 'trend-indicator trend-down';
+            } else {
+                element.innerHTML = '<i class="fas fa-minus"></i> 0%';
+                element.className = 'trend-indicator trend-neutral';
+            }
+        }
+
+        async function fetchGrowthData(range) {
+            try {
+                const response = await fetch('/api/shards');
+                if (!response.ok) return;
+
+                const result = await response.json();
+                if (!result.ok) return;
+
+                const now = new Date();
+                let cutoffTime;
+                if (range === '24h') {
+                    cutoffTime = new Date(now.getTime() - (24 * 60 * 60 * 1000));
+                } else if (range === '7d') {
+                    cutoffTime = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
+                } else if (range === '30d') {
+                    cutoffTime = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+                } else {
+                    cutoffTime = new Date(0);
+                }
+
+                const guildHistoryMap = new Map();
+                const userHistoryMap = new Map();
+
+                result.shards.forEach(shard => {
+                    if (shard.guildHistory) {
+                        shard.guildHistory.forEach(entry => {
+                            const entryTime = new Date(entry.timestamp);
+                            if (entryTime >= cutoffTime) {
+                                const time = entryTime.setSeconds(0, 0);
+                                guildHistoryMap.set(time, (guildHistoryMap.get(time) || 0) + entry.count);
+                            }
+                        });
+                    }
+                    if (shard.userHistory) {
+                        shard.userHistory.forEach(entry => {
+                            const entryTime = new Date(entry.timestamp);
+                            if (entryTime >= cutoffTime) {
+                                const time = entryTime.setSeconds(0, 0);
+                                userHistoryMap.set(time, (userHistoryMap.get(time) || 0) + entry.count);
+                            }
+                        });
+                    }
+                });
+
+                const guildData = Array.from(guildHistoryMap.entries())
+                    .sort((a, b) => a[0] - b[0])
+                    .map(([timestamp, count]) => ({ timestamp, count }));
+
+                const userData = Array.from(userHistoryMap.entries())
+                    .sort((a, b) => a[0] - b[0])
+                    .map(([timestamp, count]) => ({ timestamp, count }));
+
+                updateGrowthChart('guildGrowthChart', 'Total Guilds', guildData, '#10b981');
+                updateGrowthChart('userGrowthChart', 'Total Users', userData, '#f59e0b');
+
+                if (guildData.length > 0) {
+                    const currentGuilds = guildData[guildData.length - 1].count;
+                    document.getElementById('total-guilds').innerText = currentGuilds.toLocaleString();
+
+                    if (guildData.length >= 2) {
+                        const midPoint = Math.floor(guildData.length / 2);
+                        const firstHalf = guildData.slice(0, midPoint);
+                        const secondHalf = guildData.slice(midPoint);
+                        const avgFirst = firstHalf.reduce((acc, cur) => acc + cur.count, 0) / firstHalf.length;
+                        const avgSecond = secondHalf.reduce((acc, cur) => acc + cur.count, 0) / secondHalf.length;
+                        updateTrend('guilds-trend', avgSecond, avgFirst);
+                    }
+                }
+
+                if (userData.length > 0) {
+                    const currentUsers = userData[userData.length - 1].count;
+                    document.getElementById('total-users').innerText = currentUsers.toLocaleString();
+
+                    if (userData.length >= 2) {
+                        const midPoint = Math.floor(userData.length / 2);
+                        const firstHalf = userData.slice(0, midPoint);
+                        const secondHalf = userData.slice(midPoint);
+                        const avgFirst = firstHalf.reduce((acc, cur) => acc + cur.count, 0) / firstHalf.length;
+                        const avgSecond = secondHalf.reduce((acc, cur) => acc + cur.count, 0) / secondHalf.length;
+                        updateTrend('users-trend', avgSecond, avgFirst);
+                    }
+                }
+
+            } catch (error) {
+                console.error("Failed to fetch growth data:", error);
+            }
+        }
+
+        let guildGrowthChartInstance = null;
+        let userGrowthChartInstance = null;
+
+        function updateGrowthChart(canvasId, label, data, color) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            let chartInstance = canvasId === 'guildGrowthChart' ? guildGrowthChartInstance : userGrowthChartInstance;
+
+            if (chartInstance) chartInstance.destroy();
+
+            const newChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(d => new Date(d.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })),
+                    datasets: [{
+                        label: label,
+                        data: data.map(d => d.count),
+                        borderColor: color,
+                        backgroundColor: color + '1A',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8', maxTicksLimit: 8 }
+                        }
+                    }
+                }
+            });
+
+            if (canvasId === 'guildGrowthChart') guildGrowthChartInstance = newChart;
+            else userGrowthChartInstance = newChart;
+        }
+
+        function updateActivityChart(labels, messages, interactions) {
+            const ctx = document.getElementById('activityChart').getContext('2d');
+
+            if (activityChartInstance) activityChartInstance.destroy();
+
+            activityChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Messages',
+                            data: messages,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Interactions',
+                            data: interactions,
+                            borderColor: '#5865f2',
+                            backgroundColor: 'rgba(88, 101, 242, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#94a3b8' } }
+                    },
+                    scales: {
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8', maxTicksLimit: 8 }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateCommandsChart(topCommands, otherTooltipData) {
+            const ctx = document.getElementById('commandsChart').getContext('2d');
+
+            if (commandsChartInstance) commandsChartInstance.destroy();
+
+            commandsChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: topCommands.map(c => c[0]),
+                    datasets: [{
+                        label: 'Usage',
+                        data: topCommands.map(c => c[1]),
+                        backgroundColor: '#8b5cf6',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                afterLabel: function (context) {
+                                    if (context.label === 'Other' && otherTooltipData) {
+                                        let lines = [];
+                                        otherTooltipData.next4.forEach(cmd => {
+                                            lines.push(`${cmd[0]}: ${cmd[1]}`);
+                                        });
+                                        if (otherTooltipData.remaining > 0) {
+                                            lines.push(`...and ${otherTooltipData.remaining} others`);
+                                        }
+                                        return lines;
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateDistributionChart(topCommands, otherTooltipData) {
+            const ctx = document.getElementById('distributionChart').getContext('2d');
+
+            if (distributionChartInstance) distributionChartInstance.destroy();
+
+            distributionChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: topCommands.map(c => c[0]),
+                    datasets: [{
+                        data: topCommands.map(c => c[1]),
+                        backgroundColor: [
+                            '#3b82f6', '#5865f2', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#6366f1'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right', labels: { color: '#94a3b8' } },
+                        tooltip: {
+                            callbacks: {
+                                afterLabel: function (context) {
+                                    if (context.label === 'Other' && otherTooltipData) {
+                                        let lines = [];
+                                        otherTooltipData.next4.forEach(cmd => {
+                                            lines.push(`${cmd[0]}: ${cmd[1]}`);
+                                        });
+                                        if (otherTooltipData.remaining > 0) {
+                                            lines.push(`...and ${otherTooltipData.remaining} others`);
+                                        }
+                                        return lines;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>

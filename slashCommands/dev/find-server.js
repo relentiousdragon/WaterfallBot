@@ -264,7 +264,8 @@ module.exports = {
         name: "find-server",
         description: "Find and view info about servers the bot is in",
         category: "Dev",
-        permissions: [],
-        botPermissions: []
+        permissions: ["Developer"],
+        botPermissions: [],
+        created: 1764938508
     }
 };

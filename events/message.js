@@ -1,10 +1,11 @@
 const { PermissionsBitField, EmbedBuilder } = require("discord.js");
 const fs = require("fs");
-const { settings } = require("../index.js");
+const { settings } = require("../util/settingsModule.js");
 const funcs = require("../util/functions.js");
 const { Server } = require("../schemas/servers.js");
 const users = require("../schemas/users.js");
 const { i18n } = require("../util/i18n.js");
+const analyticsWorker = require("../util/analyticsWorker.js");
 const cooldowns = new Map();
 const alertCooldowns = new Map();
 const adminCommands = ["prefix", "p"];
@@ -27,11 +28,13 @@ async function getServerData(guildId) {
 function updateServerCache(guildId, updatedData) {
     serverCache.set(guildId, { data: updatedData, timestamp: Date.now() });
 }
-
+//
 module.exports = {
     name: "messageCreate",
     execute: async (bot, message) => {
         if (message.author.bot) return;
+
+        analyticsWorker.trackMessage();
 
         const locale = message.guild ? message.guild.preferredLocale : 'en';
         const t = i18n.getFixedT(locale);

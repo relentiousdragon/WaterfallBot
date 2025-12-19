@@ -4,6 +4,7 @@ const shardStatsSchema = mongoose.Schema({
     shardID: { type: Number, required: true, unique: true },
 
     guildCount: { type: Number, default: 0 },
+    userCount: { type: Number, default: 0 },
     wsPing: { type: Number, default: null },
 
     memory: {
@@ -14,6 +15,11 @@ const shardStatsSchema = mongoose.Schema({
     uptimeSeconds: { type: Number, default: 0 },
 
     guildHistory: [{
+        count: Number,
+        timestamp: { type: Date, default: Date.now }
+    }],
+
+    userHistory: [{
         count: Number,
         timestamp: { type: Date, default: Date.now }
     }],
