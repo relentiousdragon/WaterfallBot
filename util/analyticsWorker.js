@@ -136,8 +136,8 @@ async function exportAnalytics() {
         fs.writeFileSync(jsonPath, jsonContent);
         fs.writeFileSync(csvPath, csvContent);
 
-        if (settings.logWebhook1 && settings.logWebhook1.length === 2) {
-            const webhookClient = new WebhookClient({ id: settings.logWebhook1[0], token: settings.logWebhook1[1] });
+        if (settings.logWebhook && settings.logWebhook.length === 2) {
+            const webhookClient = new WebhookClient({ id: settings.logWebhook[0], token: settings.logWebhook[1] });
 
             const files = [
                 new AttachmentBuilder(jsonPath),
@@ -151,7 +151,7 @@ async function exportAnalytics() {
 
             logger.info(`Analytics Export: Sent ${data.length} records to webhook.`);
         } else {
-            logger.warn("Analytics Export: logWebhook1 not configured.");
+            logger.warn("Analytics Export: logWebhook not configured.");
         }
 
         fs.unlinkSync(jsonPath);
@@ -161,7 +161,7 @@ async function exportAnalytics() {
         logger.error("Analytics Export Failed:", error);
     }
 }
-
+//
 module.exports = {
     init: (bot, botSettings) => {
         settings = botSettings;

@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, MessageFlags, ContainerBuilder, SectionBuilder, TextDisplayBuilder, ThumbnailBuilder, SeparatorBuilder, SeparatorSpacingSize, PermissionsBitField } = require("discord.js");
+const { SlashCommandBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, MessageFlags, ContainerBuilder, SectionBuilder, TextDisplayBuilder, ThumbnailBuilder, SeparatorBuilder, SeparatorSpacingSize, PermissionsBitField, ApplicationCommandType } = require("discord.js");
 const e = require("../../data/emoji.js");
 const fs = require("fs");
 const path = require("path");
@@ -17,32 +17,14 @@ module.exports = {
     explicit: false,
     async execute(bot, interaction, funcs, settings, logger, t) {
         try {
-            const commands = [];
-            const commandFolders = fs.readdirSync(path.join(__dirname, ".."));
-
             const isDev = settings.devs.includes(interaction.user.id);
             const isModerator = new PermissionsBitField(interaction.member?.permissions).has(PermissionsBitField.Flags.ModerateMembers) || false;
             const isAdmin = new PermissionsBitField(interaction.member?.permissions).has(PermissionsBitField.Flags.Administrator) || false;
 
-            for (const folder of commandFolders) {
-                const folderPath = path.join(__dirname, "..", folder);
-                if (!fs.statSync(folderPath).isDirectory()) continue;
-
-                const commandFiles = fs.readdirSync(folderPath).filter(file => file.endsWith(".js"));
-                for (const file of commandFiles) {
-                    try {
-                        const command = require(path.join(folderPath, file));
-                        if (command.data && command.help) {
-                            if (command.dev && !isDev) {
-                                continue;
-                            }
-                            commands.push(command.help);
-                        }
-                    } catch (err) {
-                        logger.error(`Error loading command ${file}:`, err);
-                    }
-                }
-            }
+            const allCommands = Array.from(bot.slashCommands.values());
+            const commands = allCommands
+                .filter(cmd => cmd.data && cmd.help && (!cmd.dev || isDev) && (!cmd.data.type || cmd.data.type === ApplicationCommandType.ChatInput))
+                .map(cmd => cmd.help);
 
             const categories = {};
             for (const cmd of commands) {
@@ -124,9 +106,7 @@ module.exports = {
             const topCommands = await analyticsWorker.getTopCommands();
             if (topCommands.length > 0) {
                 const topCmdString = topCommands.map((cmd, i) => {
-                    //const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : "🥉";
-                    const medal = "";
-                    return `${medal} **/${cmd.name}** - ${funcs.abbr(cmd.count)}`;
+                    return `**/${cmd.name}** - ${funcs.abbr(cmd.count)}`;
                 }).join("\n");
 
                 section.addTextDisplayComponents(

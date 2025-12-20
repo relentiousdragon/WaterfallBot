@@ -1,6 +1,6 @@
 {
     "name": "waterfallbot",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "description": "Waterfall Discord Bot",
     "main": "bot.js",
     "scripts": {
@@ -42,5 +42,8 @@
     },
     "engines": {
         "node": ">=22.0.0"
+    },
+    "overrides": {
+        "glob": "^9.0.0"
     }
 }
