@@ -158,5 +158,12 @@
     "thread": "Thread",
     "images": "Images",
     "audit_log_warning_title": "⚠️ Notice",
-    "audit_log_warning_value": "Waterfall is missing `View Audit Log` permissions in this server. Moderator information may be inaccurate or missing."
+    "audit_log_warning_value": "Waterfall is missing `View Audit Log` permissions in this server. Moderator information may be inaccurate or missing.",
+    "primary_change": "Primary Change",
+    "item_moved": "{{item}} was moved",
+    "position_change": "Position: {{old}} ➔ {{new}}",
+    "placed_between": "Placed between {{above}} and {{below}}",
+    "placed_above": "Placed above {{target}}",
+    "placed_below": "Placed below {{target}}",
+    "multiple_items_shifted": "Multiple items shifted"
 }

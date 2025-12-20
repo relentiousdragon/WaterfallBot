@@ -83,5 +83,6 @@
         "already_challenged": "You already have a pending challenge. Please wait for it to be accepted or decline it yourself.",
         "challenger_busy": "The challenger is now in another game.",
         "waiting_for": "Waiting for {{user}}..."
-    }
+    },
+    "total": "Total"
 }
