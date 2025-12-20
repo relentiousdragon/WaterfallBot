@@ -1,7 +1,3 @@
-# Waterfall - Modern, Powerful, and Feature-rich Discord Bot  
-Waterfall is a sleek, highly capable Discord bot made by **DevSiege Studios**.  
-Designed with stability, clarity, and modern design patterns, it offers a polished, stable, and intuitive experience for servers of all sizes.
-
 <div align="center">
 
 [Terms of Service](./Terms.md) | [Privacy Policy](./Privacy.md)<br><br>
@@ -15,8 +11,6 @@ Designed with stability, clarity, and modern design patterns, it offers a polish
 </div>
 
 ---
-
-## 🌊 What's Waterfall?
 
 Waterfall is a **modular, slash-command–driven, scalable Discord bot** designed for clarity, maintainability, and performance.
 <br><br>**Note:** *Sharding in still a work in progress, so it is not recommended to use sharding for now. You may need to modify the sharding system for it to work as desired.*
@@ -44,7 +38,7 @@ Waterfall is a **modular, slash-command–driven, scalable Discord bot** designe
 - Warnings with case logs  
 - History tracking  
 - Tiered escalation  
-- Webhook-powered mod-logs  
+- Webhook mod-logs  
 
 ### ⚙️ Server Utility
 - Member info, server info  
@@ -57,13 +51,7 @@ Waterfall is a **modular, slash-command–driven, scalable Discord bot** designe
 - Gemini AI  
 - WolframAlpha  
 - Lookup utilities  
-- Dictionary & encyclopedia commands  
-
-### 🎮 Minecraft Tools
-- Server pinging  
-- Player stats  
-- MOTD parsing  
-- Server info embeds  
+- Dictionary stuff  
 
 ### 💻 Developer Features
 - Hot reload commands  

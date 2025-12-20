@@ -165,9 +165,9 @@ function generateBadges(command) {
     if (command.beta) {
         badges.push('`🧪 Beta`');
     }
-    if (command.explicit) {
+    /*if (command.explicit) {
         badges.push('`🧪 Testing Server Only`');
-    }
+    }*/
 
     return badges.length > 0 ? badges.join(' ') : '';
 }
@@ -261,7 +261,8 @@ function generateDocumentation() {
 
     markdown += `---\n\n`;
     markdown += `**Badges:**\n`;
-    markdown += `🔧 Developer Only | 👮 Moderator Only | 🧪 Beta | 🧪 Testing Server Only\n\n`;
+    //markdown += `🔧 Developer Only | 👮 Moderator Only | 🧪 Beta | 🧪 Testing Server Only\n\n`;
+    markdown += `🔧 Developer Only | 👮 Moderator Only | 🧪 Beta\n\n`;
     markdown += `Developer and Moderator roles are configured in \`settings.json\`.\n`;
 
     fs.writeFileSync(OUTPUT_FILE, markdown, 'utf8');

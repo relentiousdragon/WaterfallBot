@@ -315,6 +315,7 @@ bot.commands = new Collection();
 
 let hourlyWorkerJob = new cron.CronJob("0 * * * *", () => hourlyWorker.send(bot));
 let dailyCronJob = new cron.CronJob("0 0 * * *", () => dailyWorker.send(bot));
+let analyticsExportJob = new cron.CronJob("0 0 1 * *", () => analyticsWorker.exportAnalytics());
 
 
 async function getTotalGuildCount() {
@@ -387,7 +388,13 @@ bot.once(Events.ClientReady, async () => {
 
     if (process.env.CANARY !== "true") {
         hourlyWorkerJob.start();
-        if (shardId == 0) dailyCronJob.start();
+        if (shardId == 0) {
+            dailyCronJob.start();
+            if (process.env.CANARY !== "true") {
+                analyticsExportJob.start();
+                logger.info("Analytics Export scheduled for the 1st of every month at midnight");
+            }
+        }
     }
 
     if (shardId === 0 && process.env.CANARY !== "true") {
@@ -398,13 +405,6 @@ bot.once(Events.ClientReady, async () => {
     updateShardMetrics();
     setInterval(updateShardMetrics, 30 * 1000);
     analyticsWorker.init(bot, settings);
-
-    if (shardId === 0 && process.env.CANARY !== "true") {
-        const EXPORT_INTERVAL = 29.7 * 24 * 60 * 60 * 1000;
-
-        setInterval(analyticsWorker.exportAnalytics, EXPORT_INTERVAL);
-        logger.info(`Analytics Export scheduled every ${(EXPORT_INTERVAL / (24 * 60 * 60 * 1000)).toFixed(1)} days`);
-    }
 });
 
 bot.on("error", e => logger.error("Discord Error", e));

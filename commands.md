@@ -1,13 +1,13 @@
 # Waterfall Commands
 
-*Last updated: Thu, 18 Dec 2025 14:34:10 GMT*
+*Last updated: Sat, 20 Dec 2025 11:19:50 GMT*
 
 ## Commands
 
 - 🤖 **Bot** (4)
 - 💻 **Dev** (9)
 - 🎲 **Games** (2)
-- 🧭 **General** (6)
+- 🧭 **General** (8)
 - 🛡️ **Moderation** (6)
 - ⚙️ **Utility** (4)
 
@@ -183,6 +183,12 @@ View all available commands
 
 ---
 
+### `/meme`
+
+Get a random meme
+
+---
+
 ### `/search`
 
 Search the web
@@ -195,6 +201,12 @@ Search the web
 - `/search yahoo` - Search Yahoo
 - `/search yandex` - Search Yandex
 - `/search queries` - Get links to all search engines
+
+---
+
+### `/server`
+
+Get information about the current server
 
 ---
 
@@ -334,6 +346,6 @@ Query Wolfram|Alpha for computational answers
 ---
 
 **Badges:**
-🔧 Developer Only | 👮 Moderator Only | 🧪 Beta | 🧪 Testing Server Only
+🔧 Developer Only | 👮 Moderator Only | 🧪 Beta
 
 Developer and Moderator roles are configured in `settings.json`.

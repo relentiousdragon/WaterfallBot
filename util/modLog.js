@@ -2375,7 +2375,31 @@ function buildChannelHierarchyEmbed(data, bot, t) {
         .setFooter({ text: "Waterfall", iconURL: bot.user.displayAvatarURL() })
         .setTimestamp();
 
-    embed.addFields({ name: t('modlog:position_changes', { count: data.count }), value: data.changes.join('\n').substring(0, 1024) });
+    if (data.mover) {
+        let moverDesc = `${t('modlog:item_moved', { item: `<#${data.mover.id}>` })}\n`;
+        moverDesc += `${t('modlog:position_change', { old: data.mover.oldPos, new: data.mover.newPos })}\n`;
+
+        if (data.mover.neighborAbove && data.mover.neighborBelow) {
+            moverDesc += `📍 ${t('modlog:placed_between', { above: `<#${data.mover.neighborAbove.id}>`, below: `<#${data.mover.neighborBelow.id}>` })}`;
+        } else if (data.mover.neighborAbove) {
+            moverDesc += `⬇️ ${t('modlog:placed_below', { target: `<#${data.mover.neighborAbove.id}>` })}`;
+        } else if (data.mover.neighborBelow) {
+            moverDesc += `⬆️ ${t('modlog:placed_above', { target: `<#${data.mover.neighborBelow.id}>` })}`;
+        }
+
+        embed.addFields({ name: t('modlog:primary_change'), value: moverDesc });
+    } else if (data.changes && Array.isArray(data.changes)) {
+        const value = data.changes.join('\n');
+        embed.addFields({
+            name: t('modlog:position_changes', { count: data.count }),
+            value: value.length > 1024 ? value.substring(0, 1021) + '...' : value
+        });
+    } else {
+        embed.addFields({
+            name: t('modlog:position_changes', { count: data.count }),
+            value: t('modlog:multiple_items_shifted') || "Multiple items shifted"
+        });
+    }
 
     if (data.moderator) {
         embed.addFields({ name: t('modlog:modified_by'), value: `${data.moderator.tag} (${data.moderator.id})`, inline: true });
@@ -2391,7 +2415,31 @@ function buildRoleHierarchyEmbed(data, bot, t) {
         .setFooter({ text: "Waterfall", iconURL: bot.user.displayAvatarURL() })
         .setTimestamp();
 
-    embed.addFields({ name: t('modlog:position_changes', { count: data.count }), value: data.changes.join('\n').substring(0, 1024) });
+    if (data.mover) {
+        let moverDesc = `${t('modlog:item_moved', { item: `<@&${data.mover.id}>` })}\n`;
+        moverDesc += `${t('modlog:position_change', { old: data.mover.oldPos, new: data.mover.newPos })}\n`;
+
+        if (data.mover.neighborAbove && data.mover.neighborBelow) {
+            moverDesc += `📍 ${t('modlog:placed_between', { above: `<@&${data.mover.neighborAbove.id}>`, below: `<@&${data.mover.neighborBelow.id}>` })}`;
+        } else if (data.mover.neighborAbove) {
+            moverDesc += `⬇️ ${t('modlog:placed_below', { target: `<@&${data.mover.neighborAbove.id}>` })}`;
+        } else if (data.mover.neighborBelow) {
+            moverDesc += `⬆️ ${t('modlog:placed_above', { target: `<@&${data.mover.neighborBelow.id}>` })}`;
+        }
+
+        embed.addFields({ name: t('modlog:primary_change'), value: moverDesc });
+    } else if (data.changes && Array.isArray(data.changes)) {
+        const value = data.changes.join('\n');
+        embed.addFields({
+            name: t('modlog:position_changes', { count: data.count }),
+            value: value.length > 1024 ? value.substring(0, 1021) + '...' : value
+        });
+    } else {
+        embed.addFields({
+            name: t('modlog:position_changes', { count: data.count }),
+            value: t('modlog:multiple_items_shifted') || "Multiple items shifted"
+        });
+    }
 
     if (data.moderator) {
         embed.addFields({ name: t('modlog:modified_by'), value: `${data.moderator.tag} (${data.moderator.id})`, inline: true });

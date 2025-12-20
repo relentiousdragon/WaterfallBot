@@ -1,4 +1,4 @@
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, MessageFlags, ContainerBuilder, SectionBuilder, TextDisplayBuilder, ThumbnailBuilder, SeparatorBuilder, SeparatorSpacingSize, PermissionsBitField } = require("discord.js");
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, MessageFlags, ContainerBuilder, SectionBuilder, TextDisplayBuilder, ThumbnailBuilder, SeparatorBuilder, SeparatorSpacingSize, PermissionsBitField, ApplicationCommandType } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
 const users = require("../schemas/users.js");
@@ -96,7 +96,13 @@ async function handleButtonInteraction(bot, interaction, users, settings, logger
         await rps.handleButton(bot, interaction, t, logger);
         return;
     }
+    if (interaction.customId.startsWith('meme_')) {
+        const meme = require('../slashCommands/gen/meme.js');
+        await meme.handleButton(bot, interaction, t, logger);
+        return;
+    }
 }
+
 
 async function handleSelectMenuInteraction(bot, interaction, settings, logger) {
     const t = i18n.getFixedT(interaction.locale);
@@ -110,72 +116,48 @@ async function handleSelectMenuInteraction(bot, interaction, settings, logger) {
             });
         }
 
-        const selectedCategory = interaction.values[0];
+        try {
+            await interaction.deferUpdate();
+        } catch (err) {
+            logger.error("Error deferring help menu interaction:", err);
+            return;
+        }
 
+        const selectedCategory = interaction.values[0];
         const isDev = settings.devs.includes(interaction.user.id);
         const isModerator = new PermissionsBitField(interaction.member?.permissions).has(PermissionsBitField.Flags.ModerateMembers) || false;
         const isAdmin = new PermissionsBitField(interaction.member?.permissions).has(PermissionsBitField.Flags.Administrator) || false;
 
-        if (selectedCategory === "Dev" && !isDev) {
-            return interaction.reply({
-                content: `${e.deny} ${t('events:handlers.no_permission_category')}`,
-                flags: MessageFlags.Ephemeral
-            });
-        }
-        if (selectedCategory === "Moderation" && !isModerator && !isAdmin && !isDev) {
-            return interaction.reply({
-                content: `${e.deny} ${t('events:handlers.no_permission_category')}`,
-                flags: MessageFlags.Ephemeral
-            });
-        }
+        const allCommands = Array.from(bot.slashCommands.values());
+        const categories = {};
 
-        const commands = [];
-        const commandFolders = fs.readdirSync(path.join(__dirname, "..", "slashCommands"));
+        for (const cmd of allCommands) {
+            if (cmd.data && cmd.help) {
+                const cat = cmd.help.category || "Other";
 
-        for (const folder of commandFolders) {
-            const folderPath = path.join(__dirname, "..", "slashCommands", folder);
-            if (!fs.statSync(folderPath).isDirectory()) continue;
+                if (cat === "Dev" && !isDev) continue;
+                if (cat === "Moderation" && !isModerator && !isAdmin && !isDev) continue;
+                if (cmd.dev && !isDev) continue;
+                if (cmd.data.type && cmd.data.type !== ApplicationCommandType.ChatInput) continue;
 
-            const commandFiles = fs.readdirSync(folderPath).filter(file => file.endsWith(".js"));
-            for (const file of commandFiles) {
-                try {
-                    delete require.cache[require.resolve(path.join(folderPath, file))];
-                    const command = require(path.join(folderPath, file));
-                    if (command.data && command.help && command.help.category === selectedCategory) {
-                        if (command.dev && !isDev) {
-                            continue;
-                        }
-                        command.help.data = command.data;
-                        command.help.beta = command.beta;
-                        commands.push(command.help);
-                    }
-                } catch (err) {
-                    logger.error(`Error loading command ${file}:`, err);
-                }
+                if (!categories[cat]) categories[cat] = [];
+                categories[cat].push({
+                    ...cmd.help,
+                    data: cmd.data,
+                    beta: cmd.beta
+                });
             }
         }
 
-        commands.sort((a, b) => a.name.localeCompare(b.name));
+        const sortedNames = Object.keys(categories).sort();
+        const categoryCommands = categories[selectedCategory] || [];
+        categoryCommands.sort((a, b) => a.name.localeCompare(b.name));
 
         let commandList = "";
-        for (let i = 0; i < commands.length; i++) {
-            const cmd = commands[i];
-            const emoji = i === commands.length - 1 ? e.reply : e.reply_cont;
-
+        for (let i = 0; i < categoryCommands.length; i++) {
+            const cmd = categoryCommands[i];
+            const emoji = i === categoryCommands.length - 1 ? e.reply : e.reply_cont;
             const betaBadge = cmd.beta ? `${e.badge_beta1}${e.badge_beta2} ` : "";
-
-            // Permission display disabled for now, might remove in the future though.
-            /*
-            let permText = "";
-            if (cmd.permissions?.length > 0) {
-                permText = `${e.reply_cont_cont}   ${e.member} **${t('events:handlers.user_perms')}** ${cmd.permissions.join(", ")}`;
-            }
- 
-            let botPermText = "";
-            if ((isAdmin || isModerator || isDev) && cmd.botPermissions?.length > 0) {
-                botPermText = `${e.reply_cont_cont}   ${e.config} **${t('events:handlers.bot_perms')}** ${cmd.botPermissions.join(", ")}`;
-            }
-            */
 
             const subcommands = cmd.data.options?.filter(opt =>
                 opt.constructor?.name === "SlashCommandSubcommandBuilder" ||
@@ -191,54 +173,16 @@ async function handleSelectMenuInteraction(bot, interaction, settings, logger) {
                     const treePrefix = `${e.reply_cont_cont}   `;
                     commandList += `${treePrefix}${subEmoji} **${sub.name}** - ${sub.description}\n`;
                 }
-
-                // permission display disabled
-                // if (permText) commandList += `${permText}\n`;
-                // if (botPermText) commandList += `${botPermText}\n`;
             } else {
                 commandList += `${emoji} **/${cmd.name}** ${betaBadge} - ${t(`commands:${cmd.name}.description`, { defaultValue: cmd.description })}\n`;
-                // permission display disabled
-                // if (permText) commandList += `${permText}\n`;
-                // if (botPermText) commandList += `${botPermText}\n`;
             }
         }
 
-        const categories = {};
-        const commandFolders2 = fs.readdirSync(path.join(__dirname, "..", "slashCommands"));
-
-        for (const folder of commandFolders2) {
-            const folderPath = path.join(__dirname, "..", "slashCommands", folder);
-            if (!fs.statSync(folderPath).isDirectory()) continue;
-
-            const commandFiles = fs.readdirSync(folderPath).filter(f => f.endsWith(".js"));
-            for (const file of commandFiles) {
-                try {
-                    delete require.cache[require.resolve(path.join(folderPath, file))];
-                    const cmd = require(path.join(folderPath, file));
-                    if (cmd.data && cmd.help) {
-                        const cat = cmd.help.category || "Other";
-                        if (!categories[cat]) categories[cat] = [];
-                        categories[cat].push(cmd.help);
-                    }
-                } catch (err) {
-                    logger.error(`Error loading command ${file}:`, err);
-                }
-            }
-        }
-
-        const filteredCategories = {};
-        for (const [cat, cmds] of Object.entries(categories)) {
-            if (cat === "Dev" && !isDev) continue;
-            if (cat === "Moderation" && !isModerator && !isAdmin && !isDev) continue;
-            filteredCategories[cat] = cmds;
-        }
-
-        const sortedCategories = Object.keys(filteredCategories).sort();
         const selectMenu = new StringSelectMenuBuilder()
             .setCustomId(`help_category_${interaction.user.id}`)
             .setPlaceholder(t('events:handlers.select_category'))
             .addOptions(
-                sortedCategories.map(cat => {
+                sortedNames.map(cat => {
                     let emojiObj;
                     if (cat === "General") emojiObj = parseEmoji(e.compass_green);
                     else if (cat === "Dev") emojiObj = parseEmoji(e.config);
@@ -273,22 +217,19 @@ async function handleSelectMenuInteraction(bot, interaction, settings, logger) {
             .addSeparatorComponents(
                 new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)
             )
-            /*.addTextDisplayComponents(
-                new TextDisplayBuilder().setContent(`-# Requested by ${interaction.user.tag}`)
-            )*/
             .addActionRowComponents(row);
 
         try {
-            await interaction.update({
+            await interaction.editReply({
                 components: [container],
                 flags: MessageFlags.IsComponentsV2
             });
         } catch (error) {
             logger.error("Error updating help select menu interaction:", error);
-            throw error;
         }
     }
 }
+
 
 async function handleModalInteraction(bot, interaction, settings, logger, t) {
     if (interaction.customId.startsWith('warn_modal_')) {

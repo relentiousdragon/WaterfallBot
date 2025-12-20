@@ -28,7 +28,13 @@ module.exports = {
                 }
 
                 const batch = pendingUpdates.get(guildId);
-                batch.changes.push(`**@${newRole.name}**: ${oldRole.rawPosition} ➔ ${newRole.rawPosition}`);
+                batch.changes.push({
+                    id: newRole.id,
+                    name: newRole.name,
+                    oldPos: oldRole.rawPosition,
+                    newPos: newRole.rawPosition,
+                    role: newRole
+                });
                 return;
             }
 
@@ -86,12 +92,17 @@ async function flushUpdates(bot, guildId) {
 
     if (batch.changes.length === 0) return;
 
-    batch.changes = [...new Set(batch.changes)].sort();
+    const uniqueChanges = new Map();
+    for (const change of batch.changes) {
+        uniqueChanges.set(change.id, change);
+    }
+    const changes = Array.from(uniqueChanges.values());
 
-    if (batch.changes.length === 0) return;
+    if (changes.length === 0) return;
 
     let moderator = null;
     let auditLogPermissionsMissing = false;
+    let mover = null;
 
     try {
         const guild = await bot.guilds.fetch(guildId);
@@ -101,26 +112,60 @@ async function flushUpdates(bot, guildId) {
             try {
                 const auditLogs = await guild.fetchAuditLogs({
                     type: AuditLogEvent.RoleUpdate,
-                    limit: 1
+                    limit: 5
                 });
-                const updateLog = auditLogs.entries.first();
+
+                const updateLog = auditLogs.entries.find(entry =>
+                    (Date.now() - entry.createdTimestamp) < 10000 &&
+                    changes.some(c => c.id === entry.target.id)
+                );
+
                 if (updateLog) {
                     moderator = updateLog.executor;
+                    mover = changes.find(c => c.id === updateLog.target.id);
+                } else {
+                    const firstLog = auditLogs.entries.first();
+                    if (firstLog && (Date.now() - firstLog.createdTimestamp) < 10000) {
+                        moderator = firstLog.executor;
+                    }
                 }
             } catch (err) {
-                if (err.code === 50013) {
-                    auditLogPermissionsMissing = true;
+                if (err.code === 50013) auditLogPermissionsMissing = true;
+            }
+        }
+
+        if (!mover) {
+            let maxDisplacement = -1;
+            for (const change of changes) {
+                const displacement = Math.abs(change.newPos - change.oldPos);
+                if (displacement > maxDisplacement) {
+                    maxDisplacement = displacement;
+                    mover = change;
+                }
+            }
+        }
+
+        if (mover) {
+            const sortedRoles = Array.from(guild.roles.cache.values()).sort((a, b) => b.rawPosition - a.rawPosition);
+            const moverIndex = sortedRoles.findIndex(r => r.id === mover.id);
+
+            if (moverIndex !== -1) {
+                if (moverIndex > 0) {
+                    mover.neighborAbove = { id: sortedRoles[moverIndex - 1].id, name: sortedRoles[moverIndex - 1].name };
+                }
+                if (moverIndex < sortedRoles.length - 1) {
+                    mover.neighborBelow = { id: sortedRoles[moverIndex + 1].id, name: sortedRoles[moverIndex + 1].name };
                 }
             }
         }
     } catch (err) {
-        //
+        logger.error(`Error in flushUpdates for roles: ${err.message}`);
     }
 
     await modLog.logEvent(bot, guildId, 'roleHierarchyUpdate', {
-        count: batch.changes.length,
-        changes: batch.changes,
-        moderator: moderator,
+        count: changes.length,
+        mover: mover,
+        moderator: null, //moderator,
         auditLogPermissionsMissing: auditLogPermissionsMissing
-    }, `hierarchy:${JSON.stringify(batch.changes)}`);
+    }, `hierarchy:roles:${guildId}:${mover?.id || 'unknown'}`);
 }

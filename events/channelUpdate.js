@@ -117,10 +117,15 @@ module.exports = {
                 }
 
                 const batch = pendingUpdates.get(guildId);
-                let changeDesc = `**#${newChannel.name}**`;
-                if (positionChanged) changeDesc += `: ${oldChannel.rawPosition} ➔ ${newChannel.rawPosition}`;
-                if (parentChanged) changeDesc += ` (Category changed)`;
-                batch.changes.push(changeDesc);
+                batch.changes.push({
+                    id: newChannel.id,
+                    name: newChannel.name,
+                    oldPos: oldChannel.rawPosition,
+                    newPos: newChannel.rawPosition,
+                    oldParent: oldChannel.parentId,
+                    newParent: newChannel.parentId,
+                    channel: newChannel
+                });
                 return;
             }
 
@@ -172,30 +177,84 @@ async function flushUpdates(bot, guildId) {
 
     if (batch.changes.length === 0) return;
 
-    batch.changes = [...new Set(batch.changes)].sort();
+    const uniqueChanges = new Map();
+    for (const change of batch.changes) {
+        uniqueChanges.set(change.id, change);
+    }
+    const changes = Array.from(uniqueChanges.values());
 
-    if (batch.changes.length > 8) return;
-
-    if (batch.changes.length === 0) return;
+    if (changes.length > 15) return;
+    if (changes.length === 0) return;
 
     let moderator = null;
-    /*try {
+    let auditLogPermissionsMissing = false;
+    let mover = null;
+
+    try {
         const guild = await bot.guilds.fetch(guildId);
-        const auditLogs = await guild.fetchAuditLogs({
-            type: AuditLogEvent.ChannelUpdate,
-            limit: 1
-        });
-        const updateLog = auditLogs.entries.first();
-        if (updateLog) {
-            moderator = updateLog.executor;
+        if (!guild.members.me.permissions.has(PermissionFlagsBits.ViewAuditLog)) {
+            auditLogPermissionsMissing = true;
+        } else {
+            try {
+                const auditLogs = await guild.fetchAuditLogs({
+                    type: AuditLogEvent.ChannelUpdate,
+                    limit: 5
+                });
+
+                const updateLog = auditLogs.entries.find(entry =>
+                    (Date.now() - entry.createdTimestamp) < 10000 &&
+                    changes.some(c => c.id === entry.target.id)
+                );
+
+                if (updateLog) {
+                    moderator = updateLog.executor;
+                    mover = changes.find(c => c.id === updateLog.target.id);
+                } else {
+                    const firstLog = auditLogs.entries.first();
+                    if (firstLog && (Date.now() - firstLog.createdTimestamp) < 10000) {
+                        moderator = firstLog.executor;
+                    }
+                }
+            } catch (err) {
+                if (err.code === 50013) auditLogPermissionsMissing = true;
+            }
+        }
+
+        if (!mover) {
+            let maxDisplacement = -1;
+            for (const change of changes) {
+                const displacement = Math.abs(change.newPos - change.oldPos);
+                if (displacement > maxDisplacement) {
+                    maxDisplacement = displacement;
+                    mover = change;
+                }
+            }
+        }
+
+        if (mover && mover.channel) {
+            const parentId = mover.channel.parentId;
+            const siblings = Array.from(guild.channels.cache.values())
+                .filter(c => c.parentId === parentId)
+                .sort((a, b) => b.rawPosition - a.rawPosition);
+
+            const moverIndex = siblings.findIndex(c => c.id === mover.id);
+            if (moverIndex !== -1) {
+                if (moverIndex > 0) {
+                    mover.neighborAbove = { id: siblings[moverIndex - 1].id, name: siblings[moverIndex - 1].name };
+                }
+                if (moverIndex < siblings.length - 1) {
+                    mover.neighborBelow = { id: siblings[moverIndex + 1].id, name: siblings[moverIndex + 1].name };
+                }
+            }
         }
     } catch (err) {
         //
-    }*/
+    }
 
     await modLog.logEvent(bot, guildId, 'channelHierarchyUpdate', {
-        count: batch.changes.length,
-        changes: batch.changes,
-        moderator: null //moderator
-    }, `hierarchy:${JSON.stringify(batch.changes)}`);
+        count: changes.length,
+        mover: mover,
+        moderator: null, //moderator,
+        auditLogPermissionsMissing: auditLogPermissionsMissing
+    }, `hierarchy:channels:${guildId}:${mover?.id || 'unknown'}`);
 }

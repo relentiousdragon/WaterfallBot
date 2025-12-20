@@ -10,7 +10,7 @@ async function fetchModerator(guild, targetChannelId) {
         return { moderator: null, auditLogPermissionsMissing: true };
     }
 
-    const timeThreshold = Date.now() - 5000;
+    const timeThreshold = Date.now() - 30000;
     try {
         for (let i = 0; i < 3; i++) {
             const logs = await guild.fetchAuditLogs({

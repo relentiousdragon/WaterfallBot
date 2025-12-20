@@ -31,8 +31,7 @@ module.exports = {
         .setDescription('Get information about a user')
         .setNameLocalizations(commandMeta.user.name)
         .setDescriptionLocalizations(commandMeta.user.description)
-        .addUserOption(opt => opt.setName('target').setDescription('User to view'))
-        .setDMPermission(true),
+        .addUserOption(opt => opt.setName('target').setDescription('User to view')),
     integration_types: [0, 1],
     contexts: [0, 1, 2],
     dev: false,
