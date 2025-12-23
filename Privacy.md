@@ -97,5 +97,3 @@ We may update this Privacy Policy from time to time. We will notify you of any c
 **9. Contact Us**
 
 If you have any questions about this Privacy Policy, please contact us at devseige@gmail.com.
-- **Add a `/terms` and `/privacy` command:** We could implement slash commands in your bot to display links to these new policies.
-- **Refine the language:** If you feel any of the sections are too technical or need to be friendlier, we can adjust the wording.
