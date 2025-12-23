@@ -17,7 +17,7 @@ Acceptable Use Policy - List of forbidden activities:
 - Break the Discord Terms of Service or Community Guidelines
 
 ## 4. Liability and Disclaimers
-This product is provided 'as is' without any express or implied warranty of any kind, including warranties of merchantability or fitness for a particular purpose.
+This product is provided 'AS IS' and 'AS AVAILABLE' without any express or implied warranty of any kind, including warranties of merchantability or fitness for a particular purpose.
 We are not responsible for any incorrect usage of our product by any user.
 
 ## 5. Termination and Changes
