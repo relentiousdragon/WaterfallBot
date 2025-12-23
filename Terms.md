@@ -1,27 +1,41 @@
 # Terms of Service: Waterfall Bot
+**Last Updated:** December 23, 2025
 
 ## 1. Definitions
-- "us", "we", "DevSeige", "team" refer to the DevSeige Administration team.
-- "you", "your", "user", "users" refer to the user/s interacting with the application.
-- "bot", "product" refer to the Waterfall Bot.
-The document is a binding agreement between the user and our team.
+This Terms of Service Agreement (the "Agreement") is entered into between DevSeige Studios ("team", "we", "us", or "our") and any user ("User", "you", or "your") of the WaterfallBot Discord bot (the "Bot", "product").
 
 ## 2. Limitations and Eligility
-By using the service, the user agrees to the present Terms of Service.
+By inviting and using the Bot in your Discord server, you agree to be bound by the terms of this Agreement. If you do not agree to the terms of this Agreement, you must immediately discontinue use of the Bot.
 Waterfall Bot can be invited by you in your client or Discord Servers. The usage is allowed for any user that respect the Discord Terms of Service, more specifically have the required age to use Discord, which is 13 years old but might be different in some countries.
 Laws of the European Union (EU) and Italy are applied.
 
 ## 3. User Account and Content
 The users are responsible for keeping their passwords safe and for any activity that happens under their account.
-Acceptable Use Policy - List of forbidden activities:
-- Posting illegal, hateful, or defamatory content;
-- Use the bot for any intent it is not meant for;
-- Break the Discord Terms of Service or Community Guidelines
+You may not use the Bot in any way that:
+- Violates any applicable laws, rules, or regulations.
+- Infringes upon the rights of any third party.
+- Is malicious, abusive, or intended to disrupt the service of the Bot or Discord.
+- Attempts to decompile, reverse engineer, or otherwise derive the source code of the Bot.
+- Is for any commercial purpose without the express written consent of the team.
 
 ## 4. Liability and Disclaimers
 This product is provided 'AS IS' and 'AS AVAILABLE' without any express or implied warranty of any kind, including warranties of merchantability or fitness for a particular purpose.
-We are not responsible for any incorrect usage of our product by any user.
+To the fullest extent permitted by law, the team shall not be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits or revenues, whether incurred directly or indirectly, or any loss of data, use, goodwill, or other intangible losses, resulting from:
+- Your access to or use of or inability to access or use the Bot.
+- Any conduct or content of any third party on the Service.
+- Unauthorized access, use, or alteration of your transmissions or content.
 
-## 5. Termination and Changes
-We reserve the right to ban users or delete accounts at our discretion for any reason.
-Terms of Service can be updated at any moment, it is responsibility of the user to stay updated on any changes.
+## 5. Indemnification
+You agree to indemnify and hold harmless the Bot Owner from and against any and all claims, liabilities, damages, losses, and expenses, including without limitation, reasonable legal and accounting fees, arising out of or in any way connected with your access to or use of the Bot or your violation of these Terms
+
+## 6. Intellectual Property
+The Bot and all intellectual property rights therein, including but not limited to the source code, branding, and features, are and shall remain the property of the Bot Owner. You agree not to copy, modify, or distribute the Bot or any portion thereof without the express written consent of the Bot Owner.
+
+## 7. Contact us
+If you have any questions about these Terms, please contact us at `devseige@gmail.com`.
+
+## 8. Termination of Accounts
+We may, in our sole discretion, suspend or terminate your access to the Bot at any time, for any reason, including but not limited to your breach of these Terms. Upon termination, you must immediately cease all use of the Bot.
+
+## 9. Changes to Terms of Service
+We reserve the right to modify these Terms at any time. We will do our best to notify you of any changes, but it is your responsibility to review these Terms periodically. Your continued use of the Bot after any modification to these Terms will constitute your acceptance of the new Terms.
