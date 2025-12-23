@@ -33,7 +33,7 @@ The Bot and all intellectual property rights therein, including but not limited 
 
 ## 7. Data Privacy
 We store in a database some data related to the usage of our bot by the end user and servers to provide the funcionalities plus for analystics and security purposes.
-This data is used solely for the functionality of the Bot and is not shared with any third parties. For more details, please review our full Privacy Policy
+This data is used solely for the functionality of the Bot and is not shared with any third parties. For more details, please review our full Privacy Policy [here](https://github.com/DevSeige-Studios/WaterfallBot/blob/main/Privacy.md)
 
 ## 8. Contact us
 If you have any questions about these Terms, please contact us at `devseige@gmail.com`.
