@@ -3,6 +3,8 @@
 ## 1. Definitions
 - "us", "we", "DevSeige", "team" refer to the DevSeige Administration team.
 - "you", "your", "user", "users" refer to the user/s interacting with the application.
+- "bot", "product" refer to the Waterfall Bot.
+The document is a binding agreement between the user and our team.
 
 ## 2. Limitations and Eligility
 By using the service, the user agrees to the present Terms of Service.
