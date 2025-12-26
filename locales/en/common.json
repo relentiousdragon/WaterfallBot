@@ -1,8 +1,7 @@
 {
     "_instructions": {
         "note": "DO NOT TRANSLATE ANY TEXT INSIDE {{CURLY_BRACES}} or MARKDOWN LINKS [TEXT](URL) or emojis <:emoji:1231231231232> or slash commands </commannd name:123512442423>. These are variables used by the bot code.",
-        "example": "Hello {{user}} -> Hola {{user}} (Correct) | Hola {{usuario}} (Incorrect)",
-        "note2": "DO NOT TRANSLATE 'Waterfall', this is the bot's nickname and shouldn't be translated unless the context is the actual word Waterfall."
+        "example": "Hello {{user}} -> Hola {{user}} (Correct) | Hola {{usuario}} (Incorrect)"
     },
     "error": "An error occurred while executing the command.",
     "success": "Operation successful.",

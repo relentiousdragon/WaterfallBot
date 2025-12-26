@@ -17,16 +17,18 @@
         "name": "Name",
         "id": "ID",
         "members": "Members",
-        "owner": "Owner"
+        "owner": "Owner",
+        "preferred_language": "Preferred Language: {{preferredLang}}"
     },
     "guild_delete": {
         "title": "Left Server",
         "name": "Name",
         "id": "ID",
-        "members": "Members"
+        "members": "Members",
+        "data_deletion": "Data will be deleted in 30 days"
     },
     "message": {
-        "mention_help": "👋 Hi There, i'm Waterfall. You can use </help:1442513505755463895> to see a list of commands.",
+        "mention_help": "👋 Hi There, i'm Waterfall. You can use </help:1444598913553403969> to see a list of commands.",
         "maintenance": "🔧 The bot is currently under maintenance. We'll be back soon.",
         "mention_prefix": "👋 Hi There, The prefix for this server is `{{prefix}}`. You can use **`{{prefix}}help`** for more information.",
         "error_execution": "<:Warning:1298554229438550088> An error occured while trying to execute that command!",
@@ -44,5 +46,13 @@
         "no_commands": "No commands found in this category.",
         "user_perms": "User Perms:",
         "bot_perms": "Bot Perms:"
+    },
+    "welcome_message": {
+        "title": "Thanks for adding me!",
+        "description": "I'm Waterfall, a multipurpose bot made by DevSeige Studios, Waterfall has robust moderation, AI, search, games, and more - all in one place for **{{guildName}}**.",
+        "help_desc": "Type </help:1444598913553403969> to see all available commands and get started!",
+        "support_btn": "Support Server",
+        "github_btn": "GitHub Repository",
+        "locale_note": "The bot's language for moderation logs and other features has been set to **{{locale}}**. To switch back to English or another language, a server manager can use </language:1449979135714791628>."
     }
 }
