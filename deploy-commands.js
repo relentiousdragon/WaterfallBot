@@ -44,7 +44,7 @@ async function deployCommands() {
                         globalCommands.push(commandJSON);
                     }
 
-                    if (!command.dev) {
+                    if (!command.dev && commandJSON.type === 1) {
                         publicCommands.push({
                             name: commandJSON.name,
                             description: commandJSON.description,
