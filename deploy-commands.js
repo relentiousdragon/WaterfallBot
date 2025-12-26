@@ -79,7 +79,7 @@ async function deployCommands() {
             { body: guildCommands },
         );
 
-        logger.neon("Successfully registered explicit commands in guild 1005773483093012521.");
+        logger.neon("Successfully registered explicit commands in guild 1440117235401363508.");
 
         if (process.env.CANARY !== "true") {
             const dblResponse = await axios.post(
