@@ -393,7 +393,7 @@
         "enable_success_desc": "**{{type}}** logs will now be sent to {{channel}}.",
         "enable_exists": "Log type **{{type}}** is already enabled in {{channel}}.",
         "enable_updated": "Log type **{{type}}** moved from {{oldChannel}} to {{newChannel}}.",
-        "enable_all_success": "Enabled/Updated **{{count}}** log types in {{channel}}.",
+        "enable_all_success": "Updated **{{count}}** log types in {{channel}}.",
         "disable_success_title": "Log Type Disabled",
         "disable_all_success": "Disabled all log types.",
         "list_title": "Server Log Configuration",
