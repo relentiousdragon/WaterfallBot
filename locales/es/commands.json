@@ -228,7 +228,7 @@
             "alert": "Alert",
             "timeout": "Timeout"
         },
-        "advanced_title": "Advanced Regex Rule Creator",
+        "advanced_title": "Regex Rule Creator",
         "advanced_rule_name": "Rule Name",
         "advanced_base_keyword": "Base Keyword",
         "advanced_timeout": "Rule creation timed out after 10 minutes.",
@@ -239,7 +239,7 @@
         "advanced_keyword_protections": "Keyword Protections",
         "advanced_error": "Failed to create rule: {{error}}",
         "advanced_block_message": "Your message was blocked by the advanced filter.",
-        "advanced_cancel_title": "Regex rule creation canceled or timed out.",
+        "advanced_cancel_title": "Automod rule creation canceled or timed out.",
         "keyword_options_title": "Keyword Protection Options",
         "keyword_options": {
             "simple_block": "Basic Block",
@@ -393,7 +393,7 @@
         "enable_success_desc": "**{{type}}** logs will now be sent to {{channel}}.",
         "enable_exists": "Log type **{{type}}** is already enabled in {{channel}}.",
         "enable_updated": "Log type **{{type}}** moved from {{oldChannel}} to {{newChannel}}.",
-        "enable_all_success": "Enabled/Updated **{{count}}** log types in {{channel}}.",
+        "enable_all_success": "Updated **{{count}}** log types in {{channel}}.",
         "disable_success_title": "Log Type Disabled",
         "disable_all_success": "Disabled all log types.",
         "list_title": "Server Log Configuration",
