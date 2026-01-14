@@ -11,7 +11,7 @@
     "embeds": "Embeds",
     "components": "Components",
     "embeds_attached": "{{count}} embed(s) attached",
-    "components_attached": "{{count}} component(s) attached",
+    "components_attached": "components.json attached",
     "message_edited": "Message Edited",
     "jump_to_message": "Jump to Message",
     "before": "Before",
