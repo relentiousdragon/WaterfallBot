@@ -57,7 +57,7 @@ module.exports = {
             .setCustomId('reason')
             .setStyle(TextInputStyle.Paragraph)
             .setRequired(true)
-            .setMaxLength(500);
+            .setMaxLength(350);
 
         const label = new LabelBuilder()
             .setLabel("Reason")
@@ -107,3 +107,6 @@ module.exports = {
         created: 1764938508
     }
 };
+
+
+// contributors: @relentiousdragon
