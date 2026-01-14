@@ -33,3 +33,5 @@ module.exports = {
 };
 
 // COMMAND FILE NAME MUST BE SAME AS COMMAND NAME ending with .js
+
+// contributors: @relentiousdragon

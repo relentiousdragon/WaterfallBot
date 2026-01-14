@@ -1,19 +1,12 @@
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, MessageFlags, ContainerBuilder, SectionBuilder, TextDisplayBuilder, ThumbnailBuilder, SeparatorBuilder, SeparatorSpacingSize, PermissionsBitField, ApplicationCommandType } = require("discord.js");
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, MessageFlags, ContainerBuilder, SectionBuilder, TextDisplayBuilder, ThumbnailBuilder, SeparatorBuilder, SeparatorSpacingSize, PermissionsBitField, ApplicationCommandType, EmbedBuilder } = require("discord.js");
 const fs = require("fs");
 const path = require("path");
 const users = require("../schemas/users.js");
 const globalMails = require("../schemas/global_mails.js");
 const e = require("../data/emoji.js");
+const { parseEmoji } = require("./functions.js");
 const { i18n } = require("./i18n.js");
-
-const parseEmoji = (emojiString) => {
-    if (!emojiString) return undefined;
-    const match = emojiString.match(/<a?:(\w+):(\d+)>/);
-    if (match) {
-        return { id: match[2], name: match[1] };
-    }
-    return undefined;
-};
+const logger = require('../logger.js');
 //
 async function handleNonCommandInteractions(bot, interaction, userId, users, alertCooldowns) {
     const t = i18n.getFixedT(interaction.locale);
@@ -62,6 +55,40 @@ async function handleNonCommandInteractions(bot, interaction, userId, users, ale
             await delay(700);
             await interaction.followUp({ embeds: [embed], flags: MessageFlags.Ephemeral });
         }
+        if (userDoc && userDoc.preferences?.notifications?.vote === 'INTERACTION' && userDoc.voteReminderSent === false) {
+            const lastVoteTime = userDoc.lastVote?.getTime() || 0;
+            const twelveHours = 12 * 60 * 60 * 1000;
+
+            if (Date.now() - lastVoteTime >= twelveHours) {
+                await users.updateOne({ userID: userId }, { $set: { voteReminderSent: true } });
+
+                const voteUrl = "https://top.gg/bot/1435231722714169435/vote";
+
+                let msgContent = t('events:interaction.vote_reminder_interaction', { user: `<@${userId}>`, voteUrl: voteUrl });
+                if (userDoc.preferences?.notifications?.voteNotice) {
+                    msgContent += `\n-# ${t('events:interaction.vote_reminder_fallback_notice')}`;
+                    await users.updateOne({ userID: userId }, { $set: { "preferences.notifications.voteNotice": false } });
+                }
+
+                const container = new ContainerBuilder()
+                    .addSectionComponents(
+                        new SectionBuilder()
+                            .addTextDisplayComponents(
+                                new TextDisplayBuilder().setContent(msgContent)
+                            )
+                    );
+
+                await delay(700);
+                try {
+                    await interaction.followUp({
+                        components: [container],
+                        flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2
+                    });
+                } catch (err) {
+                    logger.debug("[Vote Reminder] ", err);
+                }
+            }
+        }
     }
 }
 
@@ -69,6 +96,16 @@ async function handleButtonInteraction(bot, interaction, users, settings, logger
     if (interaction.customId.startsWith('search_')) {
         const { handleSearchPagination } = require('../slashCommands/gen/search.js');
         await handleSearchPagination(interaction, t);
+        return;
+    }
+    if (interaction.customId.startsWith('preferences_')) {
+        const preferences = require('../slashCommands/gen/preferences.js');
+        await preferences.handleButton(bot, interaction, t, logger);
+        return;
+    }
+    if (interaction.customId.startsWith('vote_enable_reminders_')) {
+        const vote = require('../slashCommands/gen/vote.js');
+        await vote.handleButton(bot, interaction, t, logger);
         return;
     }
     if (interaction.customId.startsWith('dictionary_pronounce_')) {
@@ -101,6 +138,11 @@ async function handleButtonInteraction(bot, interaction, users, settings, logger
         await meme.handleButton(bot, interaction, t, logger);
         return;
     }
+    if (interaction.customId.startsWith('hm_')) {
+        const hangman = require('../slashCommands/games/hangman.js');
+        await hangman.handleButton(bot, interaction, t, logger);
+        return;
+    }
     if (interaction.customId.startsWith('convert_raw_')) {
         const parts = interaction.customId.split('_');
         const allowedUserId = parts[2];
@@ -126,8 +168,36 @@ async function handleButtonInteraction(bot, interaction, users, settings, logger
             flags: MessageFlags.Ephemeral
         });
     }
-}
+    if (interaction.customId.startsWith('find_emoji_p_')) {
+        const parts = interaction.customId.split('_');
+        const emojiId = parts[3];
+        const isAnimated = parts[4] === '1';
 
+        const extension = isAnimated ? 'gif' : 'png';
+        const url = `https://cdn.discordapp.com/emojis/${emojiId}.${extension}?size=4096`;
+
+        const embed = new EmbedBuilder()
+            .setImage(url)
+
+        return interaction.reply({
+            embeds: [embed],
+            flags: MessageFlags.Ephemeral
+        });
+    }
+    if (interaction.customId.startsWith('botprofile_select_')) {
+        const botprofile = require('../slashCommands/bot/botprofile.js');
+        await botprofile.handleButtonInteraction(bot, interaction, t, logger);
+        return;
+    }
+    if (interaction.customId === 'bot_credits') {
+        const credits = require('../slashCommands/bot/credits.js');
+        const container = credits.buildCreditsContainer(bot, interaction, t);
+        return interaction.reply({
+            components: [container],
+            flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2
+        });
+    }
+}
 
 async function handleSelectMenuInteraction(bot, interaction, settings, logger) {
     const t = i18n.getFixedT(interaction.locale);
@@ -182,7 +252,9 @@ async function handleSelectMenuInteraction(bot, interaction, settings, logger) {
         for (let i = 0; i < categoryCommands.length; i++) {
             const cmd = categoryCommands[i];
             const emoji = i === categoryCommands.length - 1 ? e.reply : e.reply_cont;
-            const betaBadge = cmd.beta ? `${e.badge_beta1}${e.badge_beta2} ` : "";
+            const betaBadge = cmd.beta ? ` ${e.badge_beta1}${e.badge_beta2}` : "";
+            const isNew = cmd.created && (Math.floor(Date.now() / 1000) - cmd.created) < 25 * 24 * 60 * 60;
+            const newBadge = isNew ? ` ${e.badge_new1}${e.badge_new2}` : "";
 
             const subcommands = cmd.data.options?.filter(opt =>
                 opt.constructor?.name === "SlashCommandSubcommandBuilder" ||
@@ -190,7 +262,7 @@ async function handleSelectMenuInteraction(bot, interaction, settings, logger) {
             ) || [];
 
             if (subcommands.length > 0) {
-                commandList += `${emoji} **/${cmd.name}** ${betaBadge} - ${t(`commands:${cmd.name}.description`, { defaultValue: cmd.description })}\n`;
+                commandList += `${emoji} **/${cmd.name}**${betaBadge}${newBadge} - ${t(`commands:${cmd.name}.description`, { defaultValue: cmd.description })}\n`;
 
                 for (let j = 0; j < subcommands.length; j++) {
                     const sub = subcommands[j];
@@ -199,7 +271,7 @@ async function handleSelectMenuInteraction(bot, interaction, settings, logger) {
                     commandList += `${treePrefix}${subEmoji} **${sub.name}** - ${sub.description}\n`;
                 }
             } else {
-                commandList += `${emoji} **/${cmd.name}** ${betaBadge} - ${t(`commands:${cmd.name}.description`, { defaultValue: cmd.description })}\n`;
+                commandList += `${emoji} **/${cmd.name}**${betaBadge}${newBadge} - ${t(`commands:${cmd.name}.description`, { defaultValue: cmd.description })}\n`;
             }
         }
 
@@ -218,9 +290,9 @@ async function handleSelectMenuInteraction(bot, interaction, settings, logger) {
                     else emojiObj = parseEmoji(e.info);
 
                     return {
-                        label: t(`common.categories.${cat}`, { defaultValue: cat }),
+                        label: t(`common:categories.${cat}`, { defaultValue: cat }),
                         value: cat,
-                        description: t('events:handlers.view_category', { cat: t(`common.categories.${cat}`, { defaultValue: cat }) }),
+                        description: t('events:handlers.view_category', { cat: t(`common:categories.${cat}`, { defaultValue: cat }) }),
                         emoji: emojiObj,
                         default: cat === selectedCategory
                     };
@@ -273,3 +345,6 @@ module.exports = {
     handleSelectMenuInteraction,
     handleModalInteraction
 };
+
+
+// contributors: @relentiousdragon

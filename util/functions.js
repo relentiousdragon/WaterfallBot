@@ -1,7 +1,9 @@
 const Discord = require("discord.js");
 const { millify } = require("millify");
 const axios = require("axios");
+const { loadImage } = require("canvas");
 const logger = require("../logger.js");
+const he = require('he');
 //
 module.exports = {
     bet_check: function (bet) {
@@ -85,6 +87,9 @@ module.exports = {
     },
     parseEmoji: function (emojiString) {
         if (!emojiString) return null;
+        if (typeof emojiString === 'object' && emojiString.__isEmoji) {
+            emojiString = emojiString.__v;
+        }
         const match = emojiString.match(/<a?:(\w+):(\d+)>/);
         if (match) {
             return { name: match[1], id: match[2] };
@@ -123,23 +128,39 @@ module.exports = {
         if (!hasMatch) return 0;
         return Math.min(total, maxCap);
     },
-    decodeHtmlEntities: function (text) {
+    decodeHtmlEntities: function (text, domain = '') {
         if (!text) return text;
-        return text
-            .replace(/&amp;/g, '&')
-            .replace(/&lt;/g, '<')
-            .replace(/&gt;/g, '>')
-            .replace(/&quot;/g, '"')
-            .replace(/&#39;/g, "'")
-            .replace(/&#x27;/g, "'")
-            .replace(/&nbsp;/g, ' ');
+
+        text = he.decode(text);
+
+        text = text
+            .replace(/<\/?b>/gi, '**')
+            .replace(/<\/?strong>/gi, '**')
+            .replace(/<\/?i>/gi, '*')
+            .replace(/<\/?em>/gi, '*')
+            .replace(/<\/p>/gi, '')
+            .replace(/<p[^>]*>/gi, '-# ')
+            .replace(/<br\s*\/?>/gi, '\n');
+
+        text = text.replace(/<a\s+href="([^"]+)"[^>]*>(.*?)<\/a>/gi, (_, href, linkText) => {
+            if (/^https?:\/\//i.test(href)) {
+                return `[${linkText}](${href})`;
+            } else if (domain) {
+                const url = domain.replace(/\/$/, '') + '/' + href.replace(/^\//, '');
+                return `[${linkText}](${url})`;
+            } else {
+                return linkText;
+            }
+        });
+
+        return text;
     },
     truncate: function (text, max = 1024) {
         if (!text) return '—';
         if (text.length <= max) return text;
         return text.slice(0, max - 3) + '...';
     },
-    filterString: async function (query) {
+    async filterString(query) {
         try {
             const response = await axios.get('https://www.purgomalum.com/service/json', {
                 params: { text: query, fill_char: '-' }
@@ -148,5 +169,226 @@ module.exports = {
         } catch {
             return '[REDACTED]';
         }
+    },
+    async getLogoUrl(domain) {
+        return `https://logo.clearbit.com/${domain}`;
+    },
+    async isImageUrl(url, timeout = 2000) {
+        if (!url) return false;
+        const imageExtensions = [".png", ".jpg", ".jpeg", ".gif", ".webp"];
+        try {
+            const urlObj = new URL(url);
+            const pathname = urlObj.pathname.toLowerCase();
+            if (imageExtensions.some(ext => pathname.endsWith(ext))) return true;
+        } catch { }
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeout);
+            const response = await fetch(url, { method: 'HEAD', signal: controller.signal, redirect: 'follow' });
+            clearTimeout(timeoutId);
+            let contentType = response.headers.get('content-type');
+            if (!contentType) return imageExtensions.some(ext => url.toLowerCase().includes(ext));
+            return contentType.startsWith('image/');
+        } catch {
+            return imageExtensions.some(ext => url.toLowerCase().includes(ext));
+        }
+    },
+    async getImageInfo(url) {
+        if (!url) return { isValid: false };
+        try {
+            const img = await loadImage(url);
+            return {
+                isValid: true,
+                width: img.width,
+                height: img.height,
+                ratio: img.width / img.height
+            };
+        } catch (err) {
+            return { isValid: false };
+        }
+    },
+    getRiskTier: function (infractions = []) {
+        const tiers = [
+            { level: 1, name: "Clear", color: "#2ecc71" },
+            { level: 2, name: "Low Risk", color: "#f1c40f" },
+            { level: 3, name: "Moderate Risk", color: "#e67e22" },
+            { level: 4, name: "Repeat Offender", color: "#e74c3c" },
+            { level: 5, name: "Extreme Risk", color: "#9b59b6" }
+        ];
+
+        const fortyFiveDaysAgo = Date.now() - (45 * 24 * 60 * 60 * 1000);
+        const recentInfractions = infractions.filter(inf => new Date(inf.timestamp).getTime() > fortyFiveDaysAgo).length;
+
+        let tier;
+        if (recentInfractions === 0) tier = tiers[0];
+        else if (recentInfractions <= 2) tier = tiers[1];
+        else if (recentInfractions <= 5) tier = tiers[2];
+        else if (recentInfractions <= 7) tier = tiers[3];
+        else tier = tiers[4];
+
+        return { ...tier, count: recentInfractions };
+    },
+    parseDuration: function (str) {
+        if (!str) return null;
+        const units = {
+            's': 1000,
+            'm': 1000 * 60,
+            'h': 1000 * 60 * 60,
+            'd': 1000 * 60 * 60 * 24,
+            'w': 1000 * 60 * 60 * 24 * 7,
+            'mo': 1000 * 60 * 60 * 24 * 30,
+            'y': 1000 * 60 * 60 * 24 * 365,
+        };
+
+        const regex = /(\d+)\s*(mo|y|w|d|h|m|s)/gi;
+        let totalMs = 0;
+        let match;
+        let hasMatch = false;
+
+        while ((match = regex.exec(str)) !== null) {
+            const value = parseInt(match[1]);
+            const unit = match[2].toLowerCase();
+            if (units[unit]) {
+                totalMs += value * units[unit];
+                hasMatch = true;
+            }
+        }
+
+        if (!hasMatch && /^\d+$/.test(str.trim())) {
+            totalMs = parseInt(str.trim()) * 1000 * 60;
+            hasMatch = true;
+        }
+
+        return hasMatch ? totalMs : null;
+    },
+    formatDurationPretty: function (ms, options = {}) {
+        const { maxUnit = 'y', excludeWeeks = true } = options;
+
+        const UNIT_VALUES = {
+            y: 1000 * 60 * 60 * 24 * 365,
+            mo: 1000 * 60 * 60 * 24 * 30,
+            w: 1000 * 60 * 60 * 24 * 7,
+            d: 1000 * 60 * 60 * 24,
+            h: 1000 * 60 * 60,
+            m: 1000 * 60,
+            s: 1000,
+        };
+
+        const unitOrder = ['y', 'mo', 'w', 'd', 'h', 'm', 's'];
+        let filteredUnits = unitOrder;
+
+        if (excludeWeeks) {
+            filteredUnits = filteredUnits.filter(u => u !== 'w');
+        }
+
+        const maxIndex = filteredUnits.indexOf(maxUnit);
+        if (maxIndex !== -1) {
+            filteredUnits = filteredUnits.slice(maxIndex);
+        }
+
+        let remaining = ms;
+        const durationObj = {};
+        const activeUnits = [];
+
+        for (const unit of filteredUnits) {
+            const val = UNIT_VALUES[unit];
+            if (unit === filteredUnits[0]) {
+                const amount = Math.floor(remaining / val);
+                if (amount > 0 || unit === filteredUnits[filteredUnits.length - 1]) {
+                    const key = unit === 'mo' ? 'months' : unit === 'y' ? 'years' : unit === 'w' ? 'weeks' : unit === 'd' ? 'days' : unit === 'h' ? 'hours' : unit === 'm' ? 'minutes' : 'seconds';
+                    durationObj[key] = amount;
+                    activeUnits.push(unit);
+                    remaining %= val;
+                }
+            } else {
+                const amount = Math.floor(remaining / val);
+                if (amount > 0) {
+                    const key = unit === 'mo' ? 'months' : unit === 'y' ? 'years' : unit === 'w' ? 'weeks' : unit === 'd' ? 'days' : unit === 'h' ? 'hours' : unit === 'm' ? 'minutes' : 'seconds';
+                    durationObj[key] = amount;
+                    activeUnits.push(unit);
+                    remaining %= val;
+                }
+            }
+            if (activeUnits.length >= 2) break;
+        }
+
+        if (typeof Intl.DurationFormat !== 'undefined') {
+            try {
+                const formatter = new Intl.DurationFormat('en-US', {
+                    style: 'narrow',
+                    years: 'narrow',
+                    months: 'narrow',
+                    weeks: 'narrow',
+                    days: 'narrow',
+                    hours: 'narrow',
+                    minutes: 'narrow',
+                    seconds: 'narrow'
+                });
+                return formatter.format(durationObj).replace(/,/g, '');
+            } catch (e) { }
+        }
+
+        const parts = activeUnits.map(unit => {
+            const key = unit === 'mo' ? 'months' : unit === 'y' ? 'years' : unit === 'w' ? 'weeks' : unit === 'd' ? 'days' : unit === 'h' ? 'hours' : unit === 'm' ? 'minutes' : 'seconds';
+            return `${durationObj[key].toLocaleString()}${unit}`;
+        });
+
+        return parts.join(' ') || '0s';
+    },
+    async checkUrlSafety(url) {
+        if (!url) return { safe: true };
+        const knownGrabbers = [
+            'grabify.link', 'grabify.com', 'grabify.org', 'blasze.com', 'iplogger.org',
+            'location.cyou', 'mymap.icu', 'mymap.quest', 'map-s.online', 'crypto-o.click',
+            'cryp-o.online', 'account.beauty', 'photospace.life', 'photovault.store',
+            'imagehub.fun', 'sharevault.cloud', 'xtube.chat', 'screensnaps.top',
+            'foot.wiki', 'screenshare.pics', 'myprivate.pics', 'shrekis.life',
+            'screenshot.best', 'gamingfun.me', 'stopify.co'
+        ];
+
+        try {
+            const urlObj = new URL(url.startsWith('http') ? url : `https://${url}`);
+            const hostname = urlObj.hostname.toLowerCase().replace(/^www\./, '');
+            if (knownGrabbers.some(d => hostname === d || hostname.endsWith(`.${d}`))) {
+                return { safe: false, reason: 'Known IP grabbing domain detected' };
+            }
+        } catch (e) { }
+
+        const apiKey = process.env.GOOGLE_API_KEY2;
+        if (!apiKey) return { safe: true };
+
+        try {
+            const response = await axios.post(
+                `https://safebrowsing.googleapis.com/v4/threatMatches:find?key=${apiKey}`,
+                {
+                    client: {
+                        clientId: "waterfall-bot",
+                        clientVersion: "1.2.2"
+                    },
+                    threatInfo: {
+                        threatTypes: ["MALWARE", "SOCIAL_ENGINEERING", "UNWANTED_SOFTWARE", "POTENTIALLY_HARMFUL_APPLICATION"],
+                        platformTypes: ["ANY_PLATFORM"],
+                        threatEntryTypes: ["URL"],
+                        threatEntries: [{ url: url }]
+                    }
+                }
+            );
+
+            if (response.data && response.data.matches && response.data.matches.length > 0) {
+                const threatType = response.data.matches[0].threatType;
+                return { safe: false, reason: threatType.replace(/_/g, ' ').toLowerCase() };
+            }
+
+            return { safe: true };
+        } catch (err) {
+            logger.error(`[UrlSafety] API check failed: ${err.message}`);
+            if (err.response && err.response.status === 403) {
+                return { safe: true, error: 403 };
+            }
+            return { safe: true };
+        }
     }
 };
+
+
+// contributors: @relentiousdragon

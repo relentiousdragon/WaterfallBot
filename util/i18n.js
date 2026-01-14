@@ -121,3 +121,6 @@ module.exports = {
     getCommandMetadata,
     reloadI18n
 };
+
+
+// contributors: @relentiousdragon

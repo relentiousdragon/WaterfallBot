@@ -13,3 +13,6 @@ function saveSettings() {
 }
 //
 module.exports = { settings, saveSettings };
+
+
+// contributors: @relentiousdragon

@@ -7,11 +7,11 @@
         "CHANNELID",
         "TOKEN"
     ],
-     "reportWebhook": [
+    "reportWebhook": [
         "CHANNELID",
         "TOKEN"
     ],
-     "suggestWebhook": [
+    "suggestWebhook": [
         "CHANNELID",
         "TOKEN"
     ],
@@ -35,5 +35,37 @@
     "event": "none",
     "debug": "false",
     "prefix": ">",
-    "version": "1.2.0"
+    "version": "1.3.0",
+    "c_emojis": {
+        "agentzzrp_1": "?",
+        "agentzzrp_2": "?",
+        "agentzzrp_3": "?",
+        "agentzzrp_4": "?",
+        "robelo06_1": "?",
+        "robelo06_2": "?",
+        "robelo06_3": "?",
+        "robelo06_4": "?"
+    },
+    "a_emojis": {
+        "default_1": "?",
+        "default_2": "?",
+        "default_3": "?",
+        "default_4": "?",
+        "crimson_1": "?",
+        "crimson_2": "?",
+        "crimson_3": "?",
+        "crimson_4": "?",
+        "azure_1": "?",
+        "azure_2": "?",
+        "azure_3": "?",
+        "azure_4": "?",
+        "amethyst_1": "?",
+        "amethyst_2": "?",
+        "amethyst_3": "?",
+        "amethyst_4": "?",
+        "seabreeze_1": "?",
+        "seabreeze_2": "?",
+        "seabreeze_3": "?",
+        "seabreeze_4": "?"
+    }
 }

@@ -49,7 +49,7 @@ async function renderLineChart(options) {
         height = 350
     } = options;
 
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
         const encoder = new GIFEncoder(width, height);
         const stream = encoder.createReadStream();
         encoder.start();
@@ -193,6 +193,7 @@ async function renderLineChart(options) {
             }
 
             encoder.addFrame(ctx);
+            if (frame % 8 === 0) await new Promise(resolve => setImmediate(resolve));
         }
 
         for (let i = 0; i < 30; i++) {
@@ -212,7 +213,7 @@ async function renderBarChart(options) {
         height = 350
     } = options;
 
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
         const encoder = new GIFEncoder(width, height);
         const stream = encoder.createReadStream();
         encoder.start();
@@ -349,6 +350,7 @@ async function renderBarChart(options) {
 
 
             encoder.addFrame(ctx);
+            if (frame % 8 === 0) await new Promise(resolve => setImmediate(resolve));
         }
 
         for (let i = 0; i < 12; i++) {
@@ -581,6 +583,7 @@ async function renderSegmentDonut(options) {
         }
 
         encoder.addFrame(ctx);
+        if (frame % 8 === 0) await new Promise(resolve => setImmediate(resolve));
     }
 
     encoder.finish();
@@ -588,10 +591,6 @@ async function renderSegmentDonut(options) {
     return new Promise(resolve => {
         stream.on('end', () => resolve(Buffer.concat(chunks)));
     });
-}
-
-function easeOutCubic(t) {
-    return 1 - Math.pow(1 - t, 3);
 }
 //
 module.exports = {
@@ -602,3 +601,5 @@ module.exports = {
     COLORS
 };
 
+
+// contributors: @relentiousdragon

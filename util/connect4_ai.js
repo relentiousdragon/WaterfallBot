@@ -303,3 +303,6 @@ module.exports = {
     createBoard,
     getValidMoves
 };
+
+
+// contributors: @relentiousdragon

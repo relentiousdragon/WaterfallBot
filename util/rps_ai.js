@@ -213,3 +213,6 @@ module.exports = {
     MOVES,
     WINS
 };
+
+
+// contributors: @relentiousdragon

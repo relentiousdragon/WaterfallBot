@@ -41,6 +41,11 @@ const EVENT_TO_LOG_GROUP = {
     'memberTimeout': 'moderation',
     'memberTimeoutRemove': 'moderation',
     'memberWarn': 'moderation',
+    'botDetectionAlert': 'moderation',
+    'botDetectionTimeout': 'moderation',
+    'botDetectionKick': 'moderation',
+    'altDetectionAlert': 'moderation',
+    'altDetectionTimeout': 'moderation',
     'channelCreate': 'channels',
     'channelUpdate': 'channels',
     'channelDelete': 'channels',
@@ -75,6 +80,11 @@ const EVENT_PRIORITY = {
     'memberTimeout': PRIORITY.HIGH,
     'memberTimeoutRemove': PRIORITY.HIGH,
     'memberWarn': PRIORITY.HIGH,
+    'botDetectionAlert': PRIORITY.HIGH,
+    'botDetectionTimeout': PRIORITY.HIGH,
+    'botDetectionKick': PRIORITY.HIGH,
+    'altDetectionAlert': PRIORITY.HIGH,
+    'altDetectionTimeout': PRIORITY.HIGH,
     'messageDelete': PRIORITY.MEDIUM,
     'messageDeleteBulk': PRIORITY.HIGH,
     'messageEdit': PRIORITY.MEDIUM,
@@ -1183,6 +1193,21 @@ async function logEvent(bot, guildId, eventType, data, providedDedupKey) {
             case 'warnConfigUpdate':
                 result = { embed: buildWarnConfigUpdateEmbed(data, bot, t) };
                 break;
+            case 'botDetectionAlert':
+                result = { embed: buildBotDetectionAlertEmbed(data, bot, t) };
+                break;
+            case 'botDetectionTimeout':
+                result = { embed: buildBotDetectionTimeoutEmbed(data, bot, t) };
+                break;
+            case 'botDetectionKick':
+                result = { embed: buildBotDetectionKickEmbed(data, bot, t) };
+                break;
+            case 'altDetectionAlert':
+                result = { embed: buildAltDetectionAlertEmbed(data, bot, t) };
+                break;
+            case 'altDetectionTimeout':
+                result = { embed: buildAltDetectionTimeoutEmbed(data, bot, t) };
+                break;
             default:
                 return;
         }
@@ -1254,9 +1279,7 @@ async function buildMessageDeleteEmbed(data, bot, t) {
     const isComponentsV2 = message.flags?.has('IsComponentsV2') ||
         (!message.content && message.components?.length > 0 && message.embeds?.length === 0);
 
-    if (isComponentsV2) {
-        embed.addFields({ name: t('modlog:content'), value: `*${t('modlog:components_v2_message')}*` });
-    } else if (message.content) {
+    if (!isComponentsV2 && message.content) {
         const content = message.content.length > 1024 ? message.content.substring(0, 1021) + '...' : message.content;
         embed.addFields({ name: t('modlog:content'), value: content || '*No text content*' });
     }
@@ -1392,13 +1415,29 @@ async function buildMessageEditEmbed(data, bot, t) {
 
     embed.addFields({ name: t('modlog:jump_to_message'), value: `[Click Here](${newMessage.url})`, inline: true });
 
-    const oldContent = oldMessage.content?.length > 1024 ? oldMessage.content.substring(0, 1021) + '...' : (oldMessage.content || '*No text content*');
-    const newContent = newMessage.content?.length > 1024 ? newMessage.content.substring(0, 1021) + '...' : (newMessage.content || '*No text content*');
+    const isComponentsV2 = newMessage.flags?.has('IsComponentsV2') ||
+        (!newMessage.content && newMessage.components?.length > 0 && newMessage.embeds?.length === 0);
 
-    embed.addFields(
-        { name: t('modlog:before'), value: oldContent },
-        { name: t('modlog:after'), value: newContent }
-    );
+    if (!isComponentsV2) {
+        const oldContentRaw = oldMessage.content || '';
+        const newContentRaw = newMessage.content || '';
+
+        const useDiff = oldContentRaw.length > 150 || newContentRaw.length > 150;
+
+        if (useDiff) {
+            const diff = generateDiff(oldContentRaw, newContentRaw, t);
+            const truncatedDiff = diff.length > 1000 ? diff.substring(0, 997) + '...' : diff;
+            embed.addFields({ name: t('modlog:content'), value: `\`\`\`diff\n${truncatedDiff}\n\`\`\`` });
+        } else {
+            const oldContent = oldContentRaw.length > 1024 ? oldContentRaw.substring(0, 1021) + '...' : (oldContentRaw || `*${t('modlog:none') || 'None'}*`);
+            const newContent = newContentRaw.length > 1024 ? newContentRaw.substring(0, 1021) + '...' : (newContentRaw || `*${t('modlog:none') || 'None'}*`);
+
+            embed.addFields(
+                { name: t('modlog:before'), value: oldContent },
+                { name: t('modlog:after'), value: newContent }
+            );
+        }
+    }
 
     const files = [];
     const embedsToSend = [embed];
@@ -1529,6 +1568,89 @@ function reconstructEmbed(msgEmbed) {
 
     return embedData;
 }
+
+function generateDiff(oldText, newText, t, context = 2) {
+    const oldLines = oldText.split('\n');
+    const newLines = newText.split('\n');
+
+    const dp = Array(oldLines.length + 1)
+        .fill(null)
+        .map(() => Array(newLines.length + 1).fill(0));
+
+    for (let i = oldLines.length - 1; i >= 0; i--) {
+        for (let j = newLines.length - 1; j >= 0; j--) {
+            dp[i][j] =
+                oldLines[i] === newLines[j]
+                    ? dp[i + 1][j + 1] + 1
+                    : Math.max(dp[i + 1][j], dp[i][j + 1]);
+        }
+    }
+
+    let i = 0, j = 0;
+    const diff = [];
+
+    while (i < oldLines.length && j < newLines.length) {
+        if (oldLines[i] === newLines[j]) {
+            diff.push({ type: ' ', text: oldLines[i], oldIndex: i });
+            i++; j++;
+        } else if (dp[i + 1][j] >= dp[i][j + 1]) {
+            diff.push({ type: '-', text: oldLines[i], oldIndex: i });
+            i++;
+        } else {
+            diff.push({ type: '+', text: newLines[j], oldIndex: i });
+            j++;
+        }
+    }
+
+    while (i < oldLines.length) {
+        diff.push({ type: '-', text: oldLines[i], oldIndex: i });
+        i++;
+    }
+    while (j < newLines.length) {
+        diff.push({ type: '+', text: newLines[j], oldIndex: i });
+        j++;
+    }
+
+    const hunks = [];
+    let hunkStart = null;
+
+    for (let k = 0; k < diff.length; k++) {
+        if (diff[k].type !== ' ') {
+            if (hunkStart === null) {
+                hunkStart = Math.max(0, k - context);
+            }
+        } else if (hunkStart !== null) {
+            if (k > hunkStart + context * 2) {
+                hunks.push([hunkStart, k + context]);
+                hunkStart = null;
+            }
+        }
+    }
+
+    if (hunkStart !== null) {
+        hunks.push([hunkStart, diff.length]);
+    }
+
+    const out = [];
+
+    for (const [start, end] of hunks) {
+        const sliceStart = Math.max(0, start);
+        const sliceEnd = Math.min(diff.length, end);
+
+        const lineRef = diff[sliceStart]?.oldIndex ?? 0;
+        out.push(t('modlog:changes_around_line', { line: lineRef + 1 }));
+
+        for (let k = sliceStart; k < sliceEnd; k++) {
+            out.push(`${diff[k].type} ${diff[k].text}`);
+        }
+
+        out.push('');
+    }
+
+    return `${out.join('\n')}`;
+}
+
+
 
 function buildMemberJoinEmbed(data, bot, t) {
     const { member, inviteData } = data;
@@ -1733,7 +1855,7 @@ async function buildBulkMessageDeleteEmbed(data, bot, t) {
     description.push(`**${count} messages** were bulk deleted from ${channel}`);
 
     if (userCounts.size > 0) {
-        description.push(`**Affected users:** ${userCounts.size} user${userCounts.size > 1 ? 's' : ''}`);
+        description.push(`**${t('modlog:affected_users') || 'Affected Users'}:** ${userCounts.size}`);
     }
 
     /* const timeRange = newestMessage.createdTimestamp - oldestMessage.createdTimestamp;
@@ -1907,7 +2029,11 @@ function buildChannelUpdateEmbed(data, t) {
             if (fieldName === 'User Limit') fieldName = t('modlog:voice_user_limit');
             if (fieldName === 'Region') fieldName = t('modlog:voice_region');
             if (fieldName === 'Video Quality') fieldName = t('modlog:voice_video_quality');
-            const formatVal = (v) => (v === undefined || v === null || v === '') ? (t('modlog:none') || 'None') : v;
+            const formatVal = (v) => {
+                if (v === undefined || v === null || v === '') return t('modlog:none') || 'None';
+                if (typeof v === 'boolean') return v ? t('modlog:yes') : t('modlog:no');
+                return v;
+            };
             return `**${fieldName}**: ${formatVal(c.old)} → ${formatVal(c.new)}`;
         }).join('\n');
         embed.addFields({ name: t('modlog:changes'), value: changeList.substring(0, 1024) });
@@ -1992,7 +2118,11 @@ function buildEmojiUpdateEmbed(data, t) {
     }
 
     if (changes && changes.length > 0) {
-        const formatVal = (v) => (v === undefined || v === null || v === '') ? (t('modlog:none') || 'None') : v;
+        const formatVal = (v) => {
+            if (v === undefined || v === null || v === '') return t('modlog:none') || 'None';
+            if (typeof v === 'boolean') return v ? t('modlog:yes') : t('modlog:no');
+            return v;
+        };
         const changeList = changes.map(c => `**${c.field}**: ${formatVal(c.old)} → ${formatVal(c.new)}`).join('\n');
         embed.addFields({ name: t('modlog:changes'), value: changeList.substring(0, 1024) });
     }
@@ -2213,7 +2343,11 @@ function buildRoleUpdateEmbed(data, t) {
     if (moderator) embed.addFields({ name: t('modlog:modified_by'), value: `${moderator.tag} (${moderator.id})`, inline: true });
 
     if (changes && changes.length > 0) {
-        const formatVal = (v) => (v === undefined || v === null || v === '') ? (t('modlog:none') || 'None') : v;
+        const formatVal = (v) => {
+            if (v === undefined || v === null || v === '') return t('modlog:none') || 'None';
+            if (typeof v === 'boolean') return v ? t('modlog:yes') : t('modlog:no');
+            return v;
+        };
         const changeList = changes.map(c => `**${t('modlog:' + c.field.toLowerCase().replace(' ', '_')) || c.field}**: ${formatVal(c.old)} → ${formatVal(c.new)}`).join('\n');
         embed.addFields({ name: t('modlog:changes'), value: changeList.substring(0, 1024) });
     }
@@ -2336,24 +2470,28 @@ function buildStickerUpdateEmbed(data, t) {
 
     const embed = new EmbedBuilder()
         .setColor(0x5865F2)
-        .setTitle(`${WE.settings} Sticker Updated`)
+        .setTitle(`${WE.settings} ${t('modlog:sticker_updated') || 'Sticker Updated'}`)
         .setThumbnail(newSticker.url)
         .setFooter({ text: "Waterfall", iconURL: moderator?.displayAvatarURL() })
         .setTimestamp();
 
-    embed.addFields({ name: 'Sticker', value: `${newSticker.name} (${newSticker.id})`, inline: true });
-    if (moderator) embed.addFields({ name: 'Updated By', value: `${moderator.tag}`, inline: true });
+    embed.addFields({ name: t('modlog:sticker') || 'Sticker', value: `${newSticker.name} (${newSticker.id})`, inline: true });
+    if (moderator) embed.addFields({ name: t('modlog:updated_by') || 'Updated By', value: `${moderator.tag}`, inline: true });
 
-    const formatVal = (v) => (v === undefined || v === null || v === '') ? (t('modlog:none') || 'None') : v;
+    const formatVal = (v) => {
+        if (v === undefined || v === null || v === '') return t('modlog:none') || 'None';
+        if (typeof v === 'boolean') return v ? t('modlog:yes') : t('modlog:no');
+        return v;
+    };
 
     if (oldSticker.name !== newSticker.name) {
-        embed.addFields({ name: 'Name', value: `${formatVal(oldSticker.name)} ➔ ${formatVal(newSticker.name)}`, inline: true });
+        embed.addFields({ name: t('modlog:name') || 'Name', value: `${formatVal(oldSticker.name)} ➔ ${formatVal(newSticker.name)}`, inline: true });
     }
     if (oldSticker.description !== newSticker.description) {
-        embed.addFields({ name: 'Description', value: `${formatVal(oldSticker.description)} ➔ ${formatVal(newSticker.description)}`, inline: true });
+        embed.addFields({ name: t('modlog:description') || 'Description', value: `${formatVal(oldSticker.description)} ➔ ${formatVal(newSticker.description)}`, inline: true });
     }
     if (oldSticker.tags !== newSticker.tags) {
-        embed.addFields({ name: 'Emoji', value: `${formatVal(oldSticker.tags)} ➔ ${formatVal(newSticker.tags)}`, inline: true });
+        embed.addFields({ name: t('modlog:emoji') || 'Emoji', value: `${formatVal(oldSticker.tags)} ➔ ${formatVal(newSticker.tags)}`, inline: true });
     }
 
     return embed;
@@ -2490,7 +2628,11 @@ function buildThreadUpdateEmbed(data, t) {
             if (fieldName === 'auto_archive') fieldName = t('modlog:thread_auto_archive') || 'Auto Archive';
             if (fieldName === 'tags') fieldName = t('modlog:thread_tags') || 'Tags';
 
-            const formatVal = (v) => (v === undefined || v === null || v === '') ? (t('modlog:none') || 'None') : v;
+            const formatVal = (v) => {
+                if (v === undefined || v === null || v === '') return t('modlog:none') || 'None';
+                if (typeof v === 'boolean') return v ? t('modlog:yes') : t('modlog:no');
+                return v;
+            };
             return `**${fieldName}**: ${formatVal(c.old)} ➔ ${formatVal(c.new)}`;
         }).join('\n');
         embed.addFields({ name: t('modlog:changes'), value: changeList.substring(0, 1024) });
@@ -2578,8 +2720,199 @@ function buildRoleHierarchyEmbed(data, bot, t) {
 
     return embed;
 }
+
+function buildBotDetectionAlertEmbed(data, bot, t) {
+    const { member, confidence, reasons, globalInfractions, riskLevel } = data;
+
+    const embed = new EmbedBuilder()
+        .setColor(0xfbbf24)
+        .setTitle(`${WE.warn} ${t('modlog:bot_detection_alert') || 'Bot Detection Alert'}`)
+        .setAuthor({
+            name: member.user.tag,
+            iconURL: member.user.displayAvatarURL()
+        })
+        .setThumbnail(member.user.displayAvatarURL())
+        .addFields(
+            { name: t('modlog:user') || 'User', value: `${member.user.tag} (${member.user.id})`, inline: true },
+            { name: t('modlog:confidence') || 'Confidence', value: `${confidence}%`, inline: true }
+        )
+        .setFooter({ text: "Waterfall - Bot Detection", iconURL: bot.user.displayAvatarURL() })
+        .setTimestamp();
+
+    if (reasons?.length > 0) {
+        embed.addFields({
+            name: t('modlog:detection_reasons') || 'Detection Reasons',
+            value: reasons.map(r => `• ${r}`).join('\n').substring(0, 1024),
+            inline: false
+        });
+    }
+
+    if (globalInfractions > 0) {
+        embed.addFields({
+            name: t('modlog:global_infractions') || 'Global Infractions',
+            value: `${globalInfractions} (${riskLevel || 'Unknown'})`,
+            inline: true
+        });
+    }
+
+    const accountAge = Date.now() - member.user.createdTimestamp;
+    const ageString = accountAge < 3600000 ? `${Math.floor(accountAge / 60000)}m` :
+        accountAge < 86400000 ? `${Math.floor(accountAge / 3600000)}h` :
+            `${Math.floor(accountAge / 86400000)}d`;
+
+    embed.addFields({
+        name: t('modlog:account_age') || 'Account Age',
+        value: ageString,
+        inline: true
+    });
+
+    return embed;
+}
+
+function buildBotDetectionTimeoutEmbed(data, bot, t) {
+    const { member, confidence, duration, reasons } = data;
+
+    const durationStr = duration < 60000 ? `${Math.floor(duration / 1000)}s` :
+        duration < 3600000 ? `${Math.floor(duration / 60000)}m` :
+            duration < 86400000 ? `${Math.floor(duration / 3600000)}h` :
+                `${Math.floor(duration / 86400000)}d`;
+
+    const embed = new EmbedBuilder()
+        .setColor(0xef4444)
+        .setTitle(`${WE.ban} ${t('modlog:bot_detection_timeout') || 'Bot Detection Timeout'}`)
+        .setAuthor({
+            name: member.user.tag,
+            iconURL: member.user.displayAvatarURL()
+        })
+        .setThumbnail(member.user.displayAvatarURL())
+        .addFields(
+            { name: t('modlog:user') || 'User', value: `${member.user.tag} (${member.user.id})`, inline: true },
+            { name: t('modlog:confidence') || 'Confidence', value: `${confidence}%`, inline: true },
+            { name: t('modlog:duration') || 'Duration', value: durationStr, inline: true }
+        )
+        .setFooter({ text: "Waterfall - Bot Detection", iconURL: bot.user.displayAvatarURL() })
+        .setTimestamp();
+
+    if (reasons?.length > 0) {
+        embed.addFields({
+            name: t('modlog:detection_reasons') || 'Detection Reasons',
+            value: reasons.map(r => `• ${r}`).join('\n').substring(0, 1024),
+            inline: false
+        });
+    }
+
+    return embed;
+}
+
+function buildBotDetectionKickEmbed(data, bot, t) {
+    const { member, confidence, reasons } = data;
+
+    const embed = new EmbedBuilder()
+        .setColor(0xdc2626)
+        .setTitle(`${WE.ban} ${t('modlog:bot_detection_kick') || 'Bot Detection Kick'}`)
+        .setAuthor({
+            name: member.user.tag,
+            iconURL: member.user.displayAvatarURL()
+        })
+        .setThumbnail(member.user.displayAvatarURL())
+        .addFields(
+            { name: t('modlog:user') || 'User', value: `${member.user.tag} (${member.user.id})`, inline: true },
+            { name: t('modlog:confidence') || 'Confidence', value: `${confidence}%`, inline: true }
+        )
+        .setFooter({ text: "Waterfall - Bot Detection", iconURL: bot.user.displayAvatarURL() })
+        .setTimestamp();
+
+    if (reasons?.length > 0) {
+        embed.addFields({
+            name: t('modlog:detection_reasons') || 'Detection Reasons',
+            value: reasons.map(r => `• ${r}`).join('\n').substring(0, 1024),
+            inline: false
+        });
+    }
+
+    return embed;
+}
+
+function buildAltDetectionAlertEmbed(data, bot, t) {
+    const { member, potentialAlts, totalMatches } = data;
+
+    const embed = new EmbedBuilder()
+        .setColor(0x8b5cf6)
+        .setTitle(`${WE.warn} ${t('modlog:alt_detection_alert') || 'Potential Alt Account Detected'}`)
+        .setAuthor({
+            name: member.user.tag,
+            iconURL: member.user.displayAvatarURL()
+        })
+        .setThumbnail(member.user.displayAvatarURL())
+        .addFields(
+            { name: t('modlog:user') || 'User', value: `${member.user.tag} (${member.user.id})`, inline: true }
+        )
+        .setFooter({ text: "Waterfall - Alt Detection", iconURL: bot.user.displayAvatarURL() })
+        .setTimestamp();
+
+    if (potentialAlts && potentialAlts.length > 0) {
+        let description = "Potential Alt account of recently banned user(s):\n";
+
+        for (const alt of potentialAlts) {
+            const timeString = `<t:${Math.floor(new Date(alt.bannedAt).getTime() / 1000)}:R>`;
+            description += `- <@${alt.userID}> (banned ${timeString})\n`;
+        }
+
+        if (totalMatches > potentialAlts.length) {
+            description += `...and ${totalMatches - potentialAlts.length} more.`;
+        }
+
+        embed.setDescription(description);
+    }
+
+    embed.addFields({
+        name: t('modlog:account_created') || 'Account Created',
+        value: `<t:${Math.floor(member.user.createdTimestamp / 1000)}:R>`,
+        inline: true
+    });
+
+    return embed;
+}
+
+function buildAltDetectionTimeoutEmbed(data, bot, t) {
+    const { member, confidence, duration, reasons } = data;
+
+    const durationStr = duration < 60000 ? `${Math.floor(duration / 1000)}s` :
+        duration < 3600000 ? `${Math.floor(duration / 60000)}m` :
+            duration < 86400000 ? `${Math.floor(duration / 3600000)}h` :
+                `${Math.floor(duration / 86400000)}d`;
+
+    const embed = new EmbedBuilder()
+        .setColor(0x8b5cf6)
+        .setTitle(`${WE.ban} ${t('modlog:alt_detection_timeout') || 'Alt Account Timeout'}`)
+        .setAuthor({
+            name: member.user.tag,
+            iconURL: member.user.displayAvatarURL()
+        })
+        .setThumbnail(member.user.displayAvatarURL())
+        .addFields(
+            { name: t('modlog:user') || 'User', value: `${member.user.tag} (${member.user.id})`, inline: true },
+            { name: t('modlog:confidence') || 'Confidence', value: `${confidence}%`, inline: true },
+            { name: t('modlog:duration') || 'Duration', value: durationStr, inline: true }
+        )
+        .setFooter({ text: "Waterfall - Alt Detection", iconURL: bot.user.displayAvatarURL() })
+        .setTimestamp();
+
+    if (reasons?.length > 0) {
+        embed.addFields({
+            name: t('modlog:detection_reasons') || 'Detection Reasons',
+            value: reasons.map(r => `• ${r}`).join('\n').substring(0, 1024),
+            inline: false
+        });
+    }
+
+    return embed;
+}
 //
 module.exports = {
     logAction,
     logEvent
 };
+
+
+// contributors: @relentiousdragon
