@@ -278,3 +278,6 @@ try {
     console.error('❌ Error generating documentation:', error);
     process.exit(1);
 }
+
+
+// contributors: @relentiousdragon
