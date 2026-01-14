@@ -53,7 +53,7 @@
     },
     "welcome_message": {
         "title": "Thanks for adding me!",
-        "description": "I'm Waterfall, a multipurpose bot made by DevSeige Studios, Waterfall has robust moderation, AI, search, games, and more - all in one place for **{{guildName}}**.",
+        "description": "I'm Waterfall, a multipurpose bot made by DevSeige Studios, Waterfall has robust moderation, AI, search, games, and more - all in one place.",
         "help_desc": "Type </help:1444598913553403969> to see all available commands and get started!",
         "support_btn": "Support Server",
         "github_btn": "GitHub Repository",
