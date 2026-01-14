@@ -1,6 +1,6 @@
 # Privacy Policy of Waterfall Bot
 
-**Last Updated:** December 23, 2025
+**Last Updated:** January 12, 2026
 
 This Privacy Policy outlines how DevSeige Studios ("we," "us," or "our") collects, uses, and protects the information of users ("you" or "your") of the WaterfallBot Discord bot (the "Bot").
 
@@ -16,29 +16,45 @@ We collect and process the following types of information to provide and improve
     *   `serverID`: To identify individual Discord servers.
     *   `prefix`: The custom prefix for message commands.
     *   `language`: The preferred language for bot responses and logs.
-    *   `logs`: Configuration for logging various server events, including channel IDs and webhook details for messages, members, moderation actions, channels, expressions, invites, and roles.
+    *   `logs`: Configuration for logging various server events, including channel IDs and webhooks.
     *   `warnThresholds`: Custom warning thresholds set by moderators.
+    *   **Bot Detection Settings:** Configuration for automatic bot protection.
 
 **b. Information Collected Automatically:**
 
 *   **User Data:**
     *   `userID`: Your unique Discord ID.
-    *   `lastActive`: The timestamp of your last interaction with the Bot.
-    *   `lastVote` and `lastVoteClaim`: Timestamps related to voting for the Bot on external sites.
+    *   `locale`: Your preferred language/locale (e.g., "en", "it").
+    *   `lastActive`: Timestamp of your last interaction.
+    *   `lastVote` and `lastVoteClaim`: Timestamps related to bot voting.
+    *   **AI Usage:** Tracking daily /gemini image generations
 *   **User-Specific Data:**
-    *   `mail`: In-bot messages sent to you, including title, message content, and other metadata.
-    *   `read_global_mails`: A list of global announcements you have read.
-    *   `preferences`: Your personal preferences for the Bot, such as color and bar styles.
-*   **Moderation Data:**
-    *   `WARNS`: Records of warnings issued to users, including the `serverID`, `userID`, the reason for the warning, and the moderator who issued it.
+    *   `mail`: In-bot messages sent to you.
+    *   `read_global_mails`: Global announcements you have read.
+    *   `preferences`: Personal styling preferences for the Bot.
+*   **Moderation & Security Data:**
+    *   `WARNS`: Records of warnings issued.
+    *   **Infractions:** Detailed logs of moderation actions (warns, timeouts, kicks, bans), including reasons and moderator IDs. These are typically retained for 45 days.
+    *   **Global User Infractions:** Aggregated records of infractions across eligible community servers to identify repeat offenders or malicious bots.
+    *   **Bot Detection Tracking:** Temporary tracking of recently joined suspected spam/bot user's activity (message frequency, link/mention counts) for up to 2 hours to prevent spam.
+*   **Server Statistics (Analytics):**
+    *   If enabled, we track anonymized message activity (date, channel ID, user ID) and voice session durations. Detailed activity logs are typically retained for 30-60 days.
 
-**c. Aggregated and Analytical Data:**
+**c. Third-Party Integrations:**
 
-*   We collect anonymous, aggregated data to monitor the Bot's usage and performance. This includes:
-    *   `messages`: Total number of messages processed.
-    *   `interactions`: Total number of interactions (e.g., slash commands, buttons).
-    *   `commandsUsage`: A count of how many times each command is used.
-    *   `rpsHumanWins` and `connect4HumanWins`: Anonymous win counts for in-bot games.
+When you use certain commands, Waterfall interacts with third-party providers. We only share the minimum data necessary for these services to function:
+
+*   **Google Gemini (AI):** Prompts, usernames, and a sample of server emojis may be sent to Google to provide AI responses.
+*   **Search Engines (SerpApi):** Search queries are sent to providers like Google, Bing, Yahoo, Yandex, or DuckDuckGo to retrieve results.
+*   **Wolfram Alpha:** Computational queries are sent to Wolfram Alpha.
+*   **External Meta-Data:** We may perform lookups for GitHub repositories, Minecraft servers, OMDb (Movies/Shows/Games), or Wikipedia based on your input.
+
+**d. Aggregated and Analytical Data:**
+
+*   We collect anonymous, aggregated data to monitor usage:
+    *   `commandsUsage`: Count of command executions.
+    *   `messages` and `interactions`: Total volume of activity.
+    *   Win counts for game commands (RPS, Connect4).
 
 **2. How We Use Your Information**
 

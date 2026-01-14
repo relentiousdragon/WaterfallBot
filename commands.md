@@ -1,15 +1,15 @@
 # Waterfall Commands
 
-*Last updated: Fri, 26 Dec 2025 11:49:52 GMT*
+*Last updated: Mon, 12 Jan 2026 19:15:31 GMT*
 
 ## Commands
 
-- 🤖 **Bot** (5)
-- 💻 **Dev** (9)
-- 🎲 **Games** (2)
-- 🧭 **General** (9)
-- 🛡️ **Moderation** (6)
-- ⚙️ **Utility** (5)
+- 🤖 **Bot** (8)
+- 💻 **Dev** (13)
+- 🎲 **Games** (3)
+- 🧭 **General** (8)
+- 🛡️ **Moderation** (8)
+- ⚙️ **Utility** (6)
 
 ---
 
@@ -31,9 +31,25 @@ Display bot performance metrics.
 
 ---
 
+### `/credits`
+
+View the credits and contributors of Waterfall
+
+---
+
 ### `/mail`
 
 Check your mail
+
+---
+
+### `/preferences`
+
+Manage your preferences related to the usage of Waterfall
+
+**Subcommands:**
+
+- `/preferences notifications` - Manage your notification settings
 
 ---
 
@@ -46,6 +62,12 @@ Report a user or a bot issue/bug
 ### `/suggestion`
 
 Suggest Commands or Functions for the Bot
+
+---
+
+### `/vote`
+
+Vote for the bot!
 
 ---
 
@@ -76,6 +98,36 @@ Team Only
 
 ---
 
+### `/add-beta`
+
+`🔧 Developer Only`
+
+Add a user to the beta testers list (DEV ONLY)
+
+**Required Permissions:** developer
+
+---
+
+### `/find-emoji`
+
+`🔧 Developer Only`
+
+Search for an emoji and get its value (DEV ONLY)
+
+**Required Permissions:** moderator
+
+---
+
+### `/find-locale`
+
+`🧪 Beta`
+
+Get the value of a locale key
+
+**Required Permissions:** tester
+
+---
+
 ### `/find-server`
 
 `🔧 Developer Only`
@@ -86,18 +138,18 @@ Find and view info about servers the bot is in (DEV ONLY)
 
 ---
 
-### `/github`
+### `/git`
 
 `🔧 Developer Only`
 
-GitHub repository management (DEV ONLY)
+Github repository management (DEV ONLY)
 
 **Required Permissions:** Developer
 
 **Subcommands:**
 
-- `/github pull` - Pull latest changes from GitHub
-- `/github status` - Check GitHub repository status
+- `/git pull` - Pull latest changes from GitHub
+- `/git status` - Check GitHub repository status
 
 ---
 
@@ -137,6 +189,14 @@ Reload commands, events, or deploy all slash commands
 
 ---
 
+### `/set-hangman`
+
+`🔧 Developer Only`
+
+Set the daily Hangman word
+
+---
+
 ### `/status`
 
 `🔧 Developer Only`
@@ -165,6 +225,14 @@ Play Connect 4 against Waterfall or a friend
 
 ---
 
+### `/hangman`
+
+`🧪 Beta`
+
+Play the daily Hangman word game
+
+---
+
 ### `/rps`
 
 Play Rock Paper Scissors against Waterfall or another player
@@ -180,8 +248,6 @@ Look up the definition of an English word
 ---
 
 ### `/gemini`
-
-`🧪 Beta`
 
 Ask Google Gemini (AI) a question
 
@@ -212,6 +278,7 @@ Search the web
 - `/search yandex` - Search Yandex
 - `/search wikipedia` - Search Wikipedia
 - `/search stackoverflow` - Search StackOverflow
+- `/search news` - Search DuckDuckGo News
 - `/search queries` - Get links to all search engines
 
 ---
@@ -246,12 +313,6 @@ Get information about a user
 
 ---
 
-### `/vote`
-
-Vote for the bot!
-
----
-
 ## 🛡️ Moderation
 
 ### `/automod`
@@ -270,6 +331,23 @@ Manage server auto-mod rules
 - `/automod advanced` - Create an advanced regex rule for a keyword
 - `/automod delete` - Delete an AutoMod rule
 - `/automod toggle` - Enable or disable an AutoMod rule
+
+---
+
+### `/bot-detection`
+
+`🧪 Beta`
+
+Configure automatic bot/spam detection
+
+**Required Permissions:** ManageGuild
+
+**Bot Permissions:** ModerateMembers, KickMembers
+
+**Subcommands:**
+
+- `/bot-detection setup` - Interactive bot detection setup
+- `/bot-detection status` - View current bot detection settings
 
 ---
 
@@ -313,6 +391,16 @@ Delete messages in bulk
 Get Role Informations
 
 **Required Permissions:** ManageRoles
+
+---
+
+### `/timeout`
+
+Timeout a user for a specific duration
+
+**Required Permissions:** ModerateMembers
+
+**Bot Permissions:** ModerateMembers
 
 ---
 
@@ -371,6 +459,17 @@ Generate things using Waterfall
 **Subcommands:**
 
 - `/generate emoji` - Combine two emojis to create a new one!
+
+---
+
+### `/github`
+
+Get information about GitHub users or repositories
+
+**Subcommands:**
+
+- `/github user` - Get information about a GitHub user
+- `/github repo` - Get information about a GitHub repository
 
 ---
 

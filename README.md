@@ -35,17 +35,17 @@ Waterfall is a **modular, slash-command–driven, scalable Discord bot** designe
 - Automod system  
 - Anti-spam / anti-mention  
 - Kick / ban 
-- Warnings with case logs  
+- Warnings with mod-logs  
+- Bot detection
 - History tracking  
 - Tiered escalation  
-- Webhook mod-logs  
 
 ### ⚙️ Server Utility
 - Member info, server info  
 - Message utilities  
 - Channel utilities 
 - Role helpers  
-- Server diagnostics  
+- Server statistics
 
 ### 🌐 AI & Research
 - Gemini AI  
