@@ -10,7 +10,14 @@
         "user_missing_permissions": "You're missing the following permissions to use this command: **{{perms}}**",
         "cooldown": "Please Slow Down!",
         "error_execution": "An error occured while executing this command.",
-        "button_cooldown": "Hold your horses for a bit, You're clicking too fast!"
+        "button_cooldown": "Hold your horses for a bit, You're clicking too fast!",
+        "apply_tester": "Apply for Tester",
+        "canary_restricted": "This Canary instance is restricted to Beta Testers.",
+        "vote_reminder_dm": "Hey {{user}}, you can vote again! [Click here to vote]({{voteUrl}})",
+        "vote_reminder_interaction": "Hey {{user}}, just a heads up: you can vote again! [Vote Here]({{voteUrl}})",
+        "vote_reminder_fallback_notice": "Your vote notification setting was switched from DM to Interaction because the bot couldn't message you. Use `/preferences notifications` to switch back or disable reminders.",
+        "vote_thanks_dm": "Thank you for voting for Waterfall! Your support helps the bot grow.",
+        "vote_thanks_footer": "These DMs can be disabled by using `/preferences notifications`"
     },
     "guild_create": {
         "title": "Joined Server",
@@ -39,13 +46,10 @@
         "unread_mail_title": "You have unread mail!",
         "unread_mail_description": "Hey {{user}}, check your mail using </mail:1442513505755463896>.",
         "help_menu_not_yours": "This help menu is not for you!",
-        "no_permission_category": "You don't have permission to view this category!",
         "select_category": "Select a category",
         "view_category": "View {{cat}} commands",
         "category_commands": "{{cat}} Commands",
-        "no_commands": "No commands found in this category.",
-        "user_perms": "User Perms:",
-        "bot_perms": "Bot Perms:"
+        "no_commands": "No commands found in this category."
     },
     "welcome_message": {
         "title": "Thanks for adding me!",
@@ -53,6 +57,10 @@
         "help_desc": "Type </help:1444598913553403969> to see all available commands and get started!",
         "support_btn": "Support Server",
         "github_btn": "GitHub Repository",
-        "locale_note": "The bot's language for moderation logs and other features has been set to **{{locale}}**. To switch back to English or another language, a server manager can use </language:1449979135714791628>."
+        "locale_note": "The bot's language for moderation logs and other features has been set to **{{locale}}**. To switch back to English or another language, a server manager can use </language:1449979135714791628>.",
+        "choose_waterfall_subtitle": "Select an avatar style for the bot in this server",
+        "style_cooldown_note": "You can switch the bot's profile every 10 minutes",
+        "more_styles_note": "Use </botprofile:1454161200148381868> for more styles",
+        "current": "Current"
     }
 }
