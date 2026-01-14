@@ -5,8 +5,6 @@
         "note2": "DO NOT TRANSLATE 'Waterfall', this is the bot's nickname and shouldn't be translated unless the context is the actual word Waterfall."
     },
     "error": "An error occurred while executing the command.",
-    "success": "Operation successful.",
-    "test_message": "Hello World!",
     "categories": {
         "General": "General",
         "Dev": "Developer",
@@ -28,13 +26,9 @@
     },
     "enabled": "Enabled",
     "disabled": "Disabled",
-    "automod": {
-        "created_rules": "Created {{count}} AutoMod rules for {{preset}} preset.",
-        "no_rules": "No AutoMod rules found.",
-        "rule_deleted": "AutoMod rule '{{name}}' deleted.",
-        "rule_created": "AutoMod rule '{{name}}' created.",
-        "rule_updated": "AutoMod rule '{{name}}' updated: {{status}}."
-    },
+    "interaction": "Interaction",
+    "server": "Server",
+    "dm": "DM",
     "query": "Query",
     "loading": "Please wait...",
     "no_results": "No results found.",
@@ -51,10 +45,7 @@
     "color": "Color",
     "mentionable": "Mentionable",
     "unnamed_color": "Unnamed Color",
-    "download": "Download",
     "error_occurred": "An Error Occured!",
-    "looking_up": "Looking up...",
-    "thinking": "Thinking...",
     "pronunciation": "Pronunciation",
     "truncated_output": "Output truncated for length. Use a more specific word or part of speech for more detail.",
     "offensive_warning": "This word may be considered offensive or inappropriate.",
@@ -85,5 +76,7 @@
         "challenger_busy": "The challenger is now in another game.",
         "waiting_for": "Waiting for {{user}}..."
     },
-    "total": "Total"
+    "total": "Total",
+    "select": "Select",
+    "selected": "Selected"
 }
