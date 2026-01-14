@@ -228,7 +228,7 @@
             "alert": "Alert",
             "timeout": "Timeout"
         },
-        "advanced_title": "Advanced Regex Rule Creator",
+        "advanced_title": "Regex Rule Creator",
         "advanced_rule_name": "Rule Name",
         "advanced_base_keyword": "Base Keyword",
         "advanced_timeout": "Rule creation timed out after 10 minutes.",
@@ -239,7 +239,7 @@
         "advanced_keyword_protections": "Keyword Protections",
         "advanced_error": "Failed to create rule: {{error}}",
         "advanced_block_message": "Your message was blocked by the advanced filter.",
-        "advanced_cancel_title": "Regex rule creation canceled or timed out.",
+        "advanced_cancel_title": "Automod rule creation canceled or timed out.",
         "keyword_options_title": "Keyword Protection Options",
         "keyword_options": {
             "simple_block": "Basic Block",
