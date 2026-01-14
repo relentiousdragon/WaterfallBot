@@ -578,19 +578,26 @@
             });
 
             try {
-                const response = await fetch(`/api/analytics?range=${range}`);
+                const [analyticsRes, growthRes] = await Promise.all([
+                    fetch(`/api/analytics?range=${range}`),
+                    fetch(`/api/growth?range=${range}`)
+                ]);
 
-                if (response.status === 429) {
-                    const retryAfter = response.headers.get('Retry-After') || 5;
-                    showError(`Rate limited. Retrying in ${retryAfter}s...`, "Rate Limit");
+                if (analyticsRes.status === 429 || growthRes.status === 429) {
+                    showError(`Rate limited.`, "Rate Limit");
                     return;
                 }
 
-                const result = await response.json();
+                if (analyticsRes.ok) {
+                    const result = await analyticsRes.json();
+                    if (result.ok) processAnalytics(result.data);
+                }
 
-                if (!result.ok) throw new Error(result.error);
+                if (growthRes.ok) {
+                    const result = await growthRes.json();
+                    if (result.ok) processGrowth(result.guildGrowth, result.userGrowth);
+                }
 
-                processData(result.data);
             } catch (error) {
                 console.error("Failed to load data:", error);
                 showError("Failed to load analytics data.");
@@ -612,7 +619,7 @@
             document.getElementById('error-notification').classList.remove('show');
         }
 
-        function processData(data) {
+        function processAnalytics(data) {
             if (!data || data.length === 0) return;
 
             let totalMessages = 0;
@@ -699,7 +706,7 @@
             updateCommandsChart(chartData, otherTooltipData);
             updateDistributionChart(chartData, otherTooltipData);
 
-            fetchGrowthData(currentRange);
+
         }
 
         function updateTrend(elementId, current, previous) {
@@ -725,72 +732,25 @@
             }
         }
 
-        async function fetchGrowthData(range) {
+        function processGrowth(guildData, userData) {
             try {
-                const response = await fetch('/api/shards');
-                if (!response.ok) return;
-
-                const result = await response.json();
-                if (!result.ok) return;
-
                 const now = new Date();
-                let cutoffTime;
-                if (range === '24h') {
-                    cutoffTime = new Date(now.getTime() - (24 * 60 * 60 * 1000));
-                } else if (range === '7d') {
-                    cutoffTime = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
-                } else if (range === '30d') {
-                    cutoffTime = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
-                } else {
-                    cutoffTime = new Date(0);
-                }
+                let minTime;
 
-                const guildHistoryMap = new Map();
-                const userHistoryMap = new Map();
+                if (currentRange === '24h') minTime = now.getTime() - (24 * 60 * 60 * 1000);
+                else if (currentRange === '7d') minTime = now.getTime() - (7 * 24 * 60 * 60 * 1000);
+                else if (currentRange === '30d') minTime = now.getTime() - (30 * 24 * 60 * 60 * 1000);
 
-                result.shards.forEach(shard => {
-                    if (shard.guildHistory) {
-                        shard.guildHistory.forEach(entry => {
-                            const entryTime = new Date(entry.timestamp);
-                            if (entryTime >= cutoffTime) {
-                                const time = entryTime.setSeconds(0, 0);
-                                guildHistoryMap.set(time, (guildHistoryMap.get(time) || 0) + entry.count);
-                            }
-                        });
-                    }
-                    if (shard.userHistory) {
-                        shard.userHistory.forEach(entry => {
-                            const entryTime = new Date(entry.timestamp);
-                            if (entryTime >= cutoffTime) {
-                                const time = entryTime.setSeconds(0, 0);
-                                userHistoryMap.set(time, (userHistoryMap.get(time) || 0) + entry.count);
-                            }
-                        });
-                    }
-                });
-
-                const guildData = Array.from(guildHistoryMap.entries())
-                    .sort((a, b) => a[0] - b[0])
-                    .map(([timestamp, count]) => ({ timestamp, count }));
-
-                const userData = Array.from(userHistoryMap.entries())
-                    .sort((a, b) => a[0] - b[0])
-                    .map(([timestamp, count]) => ({ timestamp, count }));
-
-                updateGrowthChart('guildGrowthChart', 'Total Guilds', guildData, '#10b981');
-                updateGrowthChart('userGrowthChart', 'Total Users', userData, '#f59e0b');
+                updateGrowthChart('guildGrowthChart', 'Total Guilds', guildData, '#10b981', minTime);
+                updateGrowthChart('userGrowthChart', 'Total Users', userData, '#f59e0b', minTime);
 
                 if (guildData.length > 0) {
                     const currentGuilds = guildData[guildData.length - 1].count;
                     document.getElementById('total-guilds').innerText = currentGuilds.toLocaleString();
 
                     if (guildData.length >= 2) {
-                        const midPoint = Math.floor(guildData.length / 2);
-                        const firstHalf = guildData.slice(0, midPoint);
-                        const secondHalf = guildData.slice(midPoint);
-                        const avgFirst = firstHalf.reduce((acc, cur) => acc + cur.count, 0) / firstHalf.length;
-                        const avgSecond = secondHalf.reduce((acc, cur) => acc + cur.count, 0) / secondHalf.length;
-                        updateTrend('guilds-trend', avgSecond, avgFirst);
+                        const startGuilds = guildData[0].count;
+                        updateTrend('guilds-trend', currentGuilds, startGuilds);
                     }
                 }
 
@@ -799,47 +759,57 @@
                     document.getElementById('total-users').innerText = currentUsers.toLocaleString();
 
                     if (userData.length >= 2) {
-                        const midPoint = Math.floor(userData.length / 2);
-                        const firstHalf = userData.slice(0, midPoint);
-                        const secondHalf = userData.slice(midPoint);
-                        const avgFirst = firstHalf.reduce((acc, cur) => acc + cur.count, 0) / firstHalf.length;
-                        const avgSecond = secondHalf.reduce((acc, cur) => acc + cur.count, 0) / secondHalf.length;
-                        updateTrend('users-trend', avgSecond, avgFirst);
+                        const startUsers = userData[0].count;
+                        updateTrend('users-trend', currentUsers, startUsers);
                     }
                 }
 
             } catch (error) {
-                console.error("Failed to fetch growth data:", error);
+                console.error("Failed to process growth data:", error);
             }
         }
 
         let guildGrowthChartInstance = null;
         let userGrowthChartInstance = null;
 
-        function updateGrowthChart(canvasId, label, data, color) {
+        function updateGrowthChart(canvasId, label, data, color, minTime) {
             const ctx = document.getElementById(canvasId).getContext('2d');
             let chartInstance = canvasId === 'guildGrowthChart' ? guildGrowthChartInstance : userGrowthChartInstance;
 
             if (chartInstance) chartInstance.destroy();
 
+            const chartData = data.map(d => ({ x: d.timestamp, y: d.count }));
+
             const newChart = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: data.map(d => new Date(d.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })),
                     datasets: [{
                         label: label,
-                        data: data.map(d => d.count),
+                        data: chartData,
                         borderColor: color,
                         backgroundColor: color + '1A',
                         tension: 0.4,
-                        fill: true
+                        fill: true,
+                        pointRadius: 0,
+                        pointHoverRadius: 4
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { display: false }
+                        legend: { display: false },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                title: function (context) {
+                                    if (context[0]) {
+                                        return new Date(context[0].parsed.x).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
+                                    }
+                                }
+                            }
+                        }
                     },
                     scales: {
                         y: {
@@ -847,8 +817,17 @@
                             ticks: { color: '#94a3b8' }
                         },
                         x: {
+                            type: 'linear',
+                            min: minTime,
+                            max: Date.now(),
                             grid: { display: false },
-                            ticks: { color: '#94a3b8', maxTicksLimit: 8 }
+                            ticks: {
+                                color: '#94a3b8',
+                                maxTicksLimit: 8,
+                                callback: function (value) {
+                                    return new Date(value).toLocaleDateString([], { month: 'short', day: 'numeric' });
+                                }
+                            }
                         }
                     }
                 }
@@ -1004,3 +983,4 @@
 </body>
 
 </html>
+<!-- contributors: @relentiousdragon -->
