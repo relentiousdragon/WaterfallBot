@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, Partials, WebhookClient, Events, ActivityType, Collection, ContainerBuilder, SectionBuilder, TextDisplayBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require("discord.js");
+const { Client, GatewayIntentBits, Partials, WebhookClient, Events, ActivityType, Collection, ContainerBuilder, SectionBuilder, TextDisplayBuilder, ButtonBuilder, ButtonStyle, MessageFlags, SeparatorBuilder, SeparatorSpacingSize } = require("discord.js");
 const { i18n } = require("./util/i18n.js");
 const path = require("path");
 const requireAll = require("require-all");
@@ -9,6 +9,8 @@ const express = require("express");
 const crypto = require("crypto");
 const { exec } = require("child_process");
 require("dotenv").config();
+const e = require("./data/emoji.js");
+const funcs = require("./util/functions.js");
 
 const { deployCommands } = require("./deploy-commands");
 const mongoose = require("./mongoose.js");
@@ -136,7 +138,13 @@ if (shardId == 0) {
                         await discordUser.send({ components: [container], flags: MessageFlags.IsComponentsV2 });
                     }
                 } catch (err) {
-                    logger.debug(`Failed to send vote thanks DM to ${user}:`, err);
+                    logger.warn(`Failed to send vote thanks DM to ${user}, disabling preference:`, err);
+                    try {
+                        data.preferences.notifications.voteThanks = "OFF";
+                        await data.save();
+                    } catch (saveErr) {
+                        logger.error("Failed to update voteThanks preference for user:", saveErr);
+                    }
                 }
             }
             return;

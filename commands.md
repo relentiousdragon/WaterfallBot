@@ -1,6 +1,6 @@
 # Waterfall Commands
 
-*Last updated: Mon, 12 Jan 2026 19:15:31 GMT*
+*Last updated: Thu, 15 Jan 2026 06:48:34 GMT*
 
 ## Commands
 
@@ -16,8 +16,6 @@
 ## 🤖 Bot
 
 ### `/botprofile`
-
-`🧪 Beta`
 
 The profile theme to apply
 
@@ -226,8 +224,6 @@ Play Connect 4 against Waterfall or a friend
 ---
 
 ### `/hangman`
-
-`🧪 Beta`
 
 Play the daily Hangman word game
 

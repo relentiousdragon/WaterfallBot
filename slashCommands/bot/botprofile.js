@@ -9,7 +9,7 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName("botprofile")
         .setNameLocalizations(commandMeta.botprofile.name || {})
-        .setDescription("Change the bot's profile picture and banner for this server")
+        .setDescription("Change the bot's profile for this server")
         .setDescriptionLocalizations(commandMeta.botprofile.description || {})
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .addStringOption(option =>

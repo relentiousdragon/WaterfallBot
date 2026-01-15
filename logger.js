@@ -158,10 +158,14 @@ const logger = {
         pinoLogger.debug(getContextMsg(msg));
     },
 
-    neon: (msg) => console.log(`\x1b[95m${msg}\x1b[0m`),
+    neon: (msg) => {
+        const out = typeof msg === 'object' ? JSON.stringify(msg, null, 2) : msg;
+        console.log(`\x1b[95m${out}\x1b[0m`);
+    },
     gradient: (msg) => {
+        const str = typeof msg === 'object' ? JSON.stringify(msg) : String(msg);
         const colors = ["31", "33", "32", "36", "34", "35"];
-        const chars = msg.split("");
+        const chars = str.split("");
         let out = chars.map((c, i) => `\x1b[${colors[i % colors.length]}m${c}\x1b[0m`).join("");
         console.log(out);
     },

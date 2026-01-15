@@ -117,7 +117,7 @@ module.exports = {
     contexts: [0, 1, 2],
     dev: false,
     mod: false,
-    beta: true,
+    beta: false,
     explicit: false,
     sessionButtonLetters,
     async execute(bot, interaction, funcs, settings, logger, t) {
