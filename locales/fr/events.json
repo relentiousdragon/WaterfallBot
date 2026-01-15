@@ -13,7 +13,7 @@
         "button_cooldown": "Doucement, tu cliques trop vite !",
         "apply_tester": "Apply for Tester",
         "canary_restricted": "This Canary instance is restricted to Beta Testers.",
-        "vote_reminder_dm": "Hey {{user}}, you can vote again! [Click here to vote]({{voteUrl}})",
+        "vote_reminder_dm": "Hey {{user}}, you can vote again!",
         "vote_reminder_interaction": "Hey {{user}}, just a heads up: you can vote again! [Vote Here]({{voteUrl}})",
         "vote_reminder_fallback_notice": "Your vote notification setting was switched from DM to Interaction because the bot couldn't message you. Use `/preferences notifications` to switch back or disable reminders.",
         "vote_thanks_dm": "Thank you for voting for Waterfall! Your support helps the bot grow.",
