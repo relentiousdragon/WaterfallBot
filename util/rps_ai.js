@@ -26,6 +26,9 @@ async function syncWithDB() {
     pendingWaterfallWins = 0;
     pendingHumanWins = 0;
 
+    globalWaterfallWins += w;
+    globalHumanWins += h;
+
     try {
         const updated = await Analytics.findOneAndUpdate(
             { timestamp: new Date(0) },
@@ -37,11 +40,14 @@ async function syncWithDB() {
             },
             { upsert: true, new: true }
         );
+
         if (updated) {
             globalWaterfallWins = updated.rpsWaterfallWins;
             globalHumanWins = updated.rpsHumanWins;
         }
     } catch (err) {
+        globalWaterfallWins -= w;
+        globalHumanWins -= h;
         pendingWaterfallWins += w;
         pendingHumanWins += h;
         console.error("[RPS AI] Error syncing with MongoDB:", err);

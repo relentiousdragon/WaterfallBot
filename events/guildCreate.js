@@ -3,8 +3,7 @@ const path = require("path");
 const { settings } = require('../util/settingsModule.js');
 const e = require('../data/emoji.js');
 const logger = require('../logger.js');
-const { i18n } = require('../util/i18n.js');
-const { parseEmoji, filterString } = require('../util/functions.js');
+const { i18n } = require('../util/i18n.js')
 require("dotenv").config();
 //
 module.exports = {
@@ -76,154 +75,169 @@ module.exports = {
             const shouldSendWelcome = Date.now() - lastWelcome >= THIRTY_DAYS;
 
             if (channel && shouldSendWelcome) {
-                const textDisplay = [
-                    new TextDisplayBuilder().setContent(`# 👋 ${welcomeT('events:welcome_message.title')}`),
-                    new TextDisplayBuilder().setContent(welcomeT('events:welcome_message.description')),
-                    new TextDisplayBuilder().setContent(`\n${welcomeT('events:welcome_message.help_desc')}`)
-                ];
+                const welcomeSuccess = await module.exports.sendWelcomeMessages(bot, channel, preferredLang, serverData?.botProfile);
 
-                if (preferredLang !== 'en') {
-                    const langNames = {
-                        de: 'Deutsch',
-                        fr: 'Français',
-                        es: 'Español',
-                        it: 'Italiano',
-                        ja: '日本語',
-                        nl: 'Nederlands',
-                        pl: 'Polski',
-                        ru: 'Русский',
-                        tr: 'Türkçe'
-                    };
-                    const langName = langNames[preferredLang] || preferredLang;
-                    const enT = i18n.getFixedT('en');
-
-                    textDisplay.push(
-                        new TextDisplayBuilder().setContent(`\n${welcomeT('events:welcome_message.locale_note', { locale: langName })}`),
-                        new TextDisplayBuilder().setContent(`-# ${enT('events:welcome_message.locale_note', { locale: langName })}`)
-                    );
-                }
-
-                const assetsDir = path.join(__dirname, '../assets');
-                const welcomeFiles = [
-                    new AttachmentBuilder(path.join(assetsDir, 'automod_setup.png'), { name: 'automod_setup.png' }),
-                    new AttachmentBuilder(path.join(assetsDir, 'rps.png'), { name: 'rps.png' }),
-                    new AttachmentBuilder(path.join(assetsDir, 'connect4.gif'), { name: 'connect4.gif' })
-                ];
-
-                const welcomeContainer = new ContainerBuilder()
-                    .setAccentColor(0x5865F2)
-                    .addSectionComponents(
-                        new SectionBuilder()
-                            .setThumbnailAccessory(new ThumbnailBuilder().setURL(bot.user.displayAvatarURL({ size: 2048 })))
-                            .addTextDisplayComponents(...textDisplay)
-                    )
-                    /*.addMediaGalleryComponents(
-                        new MediaGalleryBuilder().addItems(
-                            new MediaGalleryItemBuilder().setURL('attachment://automod_setup.png'),
-                            new MediaGalleryItemBuilder().setURL('attachment://rps.png'),
-                            new MediaGalleryItemBuilder().setURL('attachment://connect4.gif')
-                        )
-                    )*/
-                    .addActionRowComponents(
-                        new ActionRowBuilder().addComponents(
-                            new ButtonBuilder()
-                                .setLabel(welcomeT('events:welcome_message.support_btn'))
-                                .setStyle(ButtonStyle.Link)
-                                .setURL('https://discord.gg/qD3yfKGk5g'),
-                            //.setEmoji(parseEmoji(e.icon_discord)),
-                            new ButtonBuilder()
-                                .setLabel(welcomeT('events:welcome_message.github_btn'))
-                                .setStyle(ButtonStyle.Link)
-                                .setURL('https://github.com/DevSeige-Studios/waterfall')
-                            //.setEmoji(parseEmoji(e.icon_github))
-                        )
-                    );
-
-                const welcomeMessage = await channel.send({
-                    components: [welcomeContainer],
-                    //files: welcomeFiles,
-                    flags: MessageFlags.IsComponentsV2
-                }).catch(err => {
-                    logger.error(`Failed to send welcome message in guild ${guild.id}: ${err.message}`);
-                    return null;
-                });
-
-                if (welcomeMessage) {
+                if (welcomeSuccess) {
                     await Server.findOneAndUpdate(
                         { serverID: guild.id },
                         { lastWelcomeMessage: Date.now() },
                         { upsert: true }
                     );
-
-                    const { settings } = require('../util/settingsModule.js');
-                    const a = settings.a_emojis || {};
-                    const formatEmoji = (id) => id && id !== "?" ? `<:a:${id}>` : "";
-
-                    const styleList = ["default", "crimson", "azure", "amethyst", "seabreeze"];
-                    const profileNames = {
-                        default: "Default",
-                        crimson: "Crimson",
-                        azure: "Azure",
-                        amethyst: "Amethyst",
-                        seabreeze: "Sea Breeze"
-                    };
-                    const styleDescriptions = {
-                        default: "Classic",
-                        crimson: "Neo: Fiery Red",
-                        azure: "Neo: Blue",
-                        amethyst: "Neo: Purple (Glow)",
-                        seabreeze: "Neo: Teal"
-                    };
-
-                    const avatarContainer = new ContainerBuilder().setAccentColor(0x5865F2);
-                    avatarContainer.addTextDisplayComponents(
-                        new TextDisplayBuilder().setContent("# Choose your Waterfall!"),
-                        new TextDisplayBuilder().setContent(`-# ${welcomeT('events:welcome_message.choose_waterfall_subtitle')}`)
-                    );
-                    avatarContainer.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
-
-                    const currentProfile = serverData?.botProfile === 'amethyst_glow' ? 'amethyst' : serverData?.botProfile;
-
-                    for (const style of styleList) {
-                        const emojis12 = `${formatEmoji(a[`${style}_1`])}${formatEmoji(a[`${style}_2`])}`;
-                        const emojis34 = `${formatEmoji(a[`${style}_3`])}${formatEmoji(a[`${style}_4`])}`;
-                        const displayName = profileNames[style] || style;
-
-                        const isCurrent = style === currentProfile;
-                        const btnLabel = isCurrent ? welcomeT('events:welcome_message.current') : welcomeT('common:select');
-                        const btnStyle = isCurrent ? ButtonStyle.Success : ButtonStyle.Primary;
-
-                        avatarContainer.addSectionComponents(
-                            new SectionBuilder()
-                                .setButtonAccessory(
-                                    new ButtonBuilder()
-                                        .setCustomId(`botprofile_select_${style}`)
-                                        .setLabel(btnLabel)
-                                        .setStyle(btnStyle)
-                                        .setDisabled(isCurrent)
-                                )
-                                .addTextDisplayComponents(
-                                    new TextDisplayBuilder().setContent(
-                                        (emojis12 ? `${emojis12} ` : "") + `**${displayName}**\n` +
-                                        (emojis34 ? `${emojis34}  ` : "") + styleDescriptions[style]
-                                    )
-                                )
-                        );
-                    }
-
-                    avatarContainer.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
-                    avatarContainer.addTextDisplayComponents(
-                        new TextDisplayBuilder().setContent(`-# ${welcomeT('events:welcome_message.style_cooldown_note')}\n-# ${welcomeT('events:welcome_message.more_styles_note')}`)
-                    );
-
-                    await welcomeMessage.reply({
-                        components: [avatarContainer],
-                        flags: MessageFlags.IsComponentsV2
-                    }).catch(err => logger.error(`Failed to send avatar selection message in guild ${guild.id}: ${err.message}`));
                 }
             }
         } catch (error) {
             logger.error(`Error in guildCreate event: ${error.message}`);
+        }
+    },
+    async sendWelcomeMessages(bot, channel, preferredLang, currentProfile) {
+        try {
+            const welcomeT = i18n.getFixedT(preferredLang);
+
+            const textDisplay = [
+                new TextDisplayBuilder().setContent(`# 👋 ${welcomeT('events:welcome_message.title')}`),
+                new TextDisplayBuilder().setContent(welcomeT('events:welcome_message.description')),
+                new TextDisplayBuilder().setContent(`\n${welcomeT('events:welcome_message.help_desc')}`)
+            ];
+
+            if (preferredLang !== 'en') {
+                const langNames = {
+                    de: 'Deutsch',
+                    fr: 'Français',
+                    es: 'Español',
+                    it: 'Italiano',
+                    ja: '日本語',
+                    nl: 'Nederlands',
+                    pl: 'Polski',
+                    ru: 'Русский',
+                    tr: 'Türkçe'
+                };
+                const langName = langNames[preferredLang] || preferredLang;
+                const enT = i18n.getFixedT('en');
+
+                textDisplay.push(
+                    new TextDisplayBuilder().setContent(`\n${welcomeT('events:welcome_message.locale_note', { locale: langName })}`),
+                    new TextDisplayBuilder().setContent(`-# ${enT('events:welcome_message.locale_note', { locale: langName })}`)
+                );
+            }
+
+            const assetsDir = path.join(__dirname, '../assets');
+            const welcomeFiles = [
+                new AttachmentBuilder(path.join(assetsDir, 'automod_setup.png'), { name: 'automod_setup.png' }),
+                new AttachmentBuilder(path.join(assetsDir, 'rps.png'), { name: 'rps.png' }),
+                new AttachmentBuilder(path.join(assetsDir, 'connect4.gif'), { name: 'connect4.gif' })
+            ];
+
+            const me = channel.guild?.members.me;
+            const botThumbnail = me?.displayAvatarURL({ size: 2048 }) || bot.user.displayAvatarURL({ size: 2048 });
+
+            const welcomeContainer = new ContainerBuilder()
+                .setAccentColor(0x5865F2)
+                .addSectionComponents(
+                    new SectionBuilder()
+                        .setThumbnailAccessory(new ThumbnailBuilder().setURL(botThumbnail))
+                        .addTextDisplayComponents(...textDisplay)
+                )
+                /*.addMediaGalleryComponents(
+                    new MediaGalleryBuilder().addItems(
+                        new MediaGalleryItemBuilder().setURL('attachment://automod_setup.png'),
+                        new MediaGalleryItemBuilder().setURL('attachment://rps.png'),
+                        new MediaGalleryItemBuilder().setURL('attachment://connect4.gif')
+                    )
+                )*/
+                .addActionRowComponents(
+                    new ActionRowBuilder().addComponents(
+                        new ButtonBuilder()
+                            .setLabel(welcomeT('events:welcome_message.support_btn'))
+                            .setStyle(ButtonStyle.Link)
+                            .setURL('https://discord.gg/qD3yfKGk5g'),
+                        //.setEmoji(parseEmoji(e.icon_discord)),
+                        new ButtonBuilder()
+                            .setLabel(welcomeT('events:welcome_message.github_btn'))
+                            .setStyle(ButtonStyle.Link)
+                            .setURL('https://github.com/DevSeige-Studios/waterfall')
+                        //.setEmoji(parseEmoji(e.icon_github))
+                    )
+                );
+
+            const welcomeMessage = await channel.send({
+                components: [welcomeContainer],
+                //files: welcomeFiles,
+                flags: MessageFlags.IsComponentsV2
+            }).catch(err => {
+                logger.error(`Failed to send welcome message in guild ${guild.id}: ${err.message}`);
+                return null;
+            });
+
+            if (welcomeMessage) {
+                const a = settings.a_emojis || {};
+                const formatEmoji = (id) => id && id !== "?" ? `<:a:${id}>` : "";
+
+                const styleList = ["default", "crimson", "azure", "amethyst", "seabreeze"];
+                const profileNames = {
+                    default: "Default",
+                    crimson: "Crimson",
+                    azure: "Azure",
+                    amethyst: "Amethyst",
+                    seabreeze: "Sea Breeze"
+                };
+                const styleDescriptions = {
+                    default: "Classic",
+                    crimson: "Neo: Fiery Red",
+                    azure: "Neo: Blue",
+                    amethyst: "Neo: Purple (Glow)",
+                    seabreeze: "Neo: Teal"
+                };
+
+                const avatarContainer = new ContainerBuilder().setAccentColor(0x5865F2);
+                avatarContainer.addTextDisplayComponents(
+                    new TextDisplayBuilder().setContent("# Choose your Waterfall!"),
+                    new TextDisplayBuilder().setContent(`-# ${welcomeT('events:welcome_message.choose_waterfall_subtitle')}`)
+                );
+                avatarContainer.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
+
+                const normalizedProfile = (currentProfile === 'amethyst_glow' ? 'amethyst' : currentProfile) || 'default';
+
+                for (const style of styleList) {
+                    const emojis12 = `${formatEmoji(a[`${style}_1`])}${formatEmoji(a[`${style}_2`])}`;
+                    const emojis34 = `${formatEmoji(a[`${style}_3`])}${formatEmoji(a[`${style}_4`])}`;
+                    const displayName = profileNames[style] || style;
+
+                    const isCurrent = style === normalizedProfile;
+                    const btnLabel = isCurrent ? welcomeT('events:welcome_message.current') : welcomeT('common:select');
+                    const btnStyle = isCurrent ? ButtonStyle.Success : ButtonStyle.Primary;
+
+                    avatarContainer.addSectionComponents(
+                        new SectionBuilder()
+                            .setButtonAccessory(
+                                new ButtonBuilder()
+                                    .setCustomId(`botprofile_select_${style}`)
+                                    .setLabel(btnLabel)
+                                    .setStyle(btnStyle)
+                                    .setDisabled(isCurrent)
+                            )
+                            .addTextDisplayComponents(
+                                new TextDisplayBuilder().setContent(
+                                    (emojis12 ? `${emojis12} ` : "") + `**${displayName}**\n` +
+                                    (emojis34 ? `${emojis34}  ` : "") + styleDescriptions[style]
+                                )
+                            )
+                    );
+                }
+
+                avatarContainer.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
+                avatarContainer.addTextDisplayComponents(
+                    new TextDisplayBuilder().setContent(`-# ${welcomeT('events:welcome_message.style_cooldown_note')}\n-# ${welcomeT('events:welcome_message.more_styles_note')}`)
+                );
+
+                await welcomeMessage.reply({
+                    components: [avatarContainer],
+                    flags: MessageFlags.IsComponentsV2
+                }).catch(err => logger.error(`Failed to send avatar selection message in guild ${guild.id}: ${err.message}`));
+            }
+            return false;
+        } catch (err) {
+            logger.error(`Error sending welcome messages: ${err.message}`);
+            return false;
         }
     }
 };

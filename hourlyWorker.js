@@ -1,4 +1,4 @@
-const { ContainerBuilder, SectionBuilder, TextDisplayBuilder, ButtonBuilder, ButtonStyle, MessageFlags, EmbedBuilder, WebhookClient } = require("discord.js");
+const { ContainerBuilder, SectionBuilder, TextDisplayBuilder, ButtonBuilder, ButtonStyle, MessageFlags, EmbedBuilder, WebhookClient, SeparatorBuilder, SeparatorSpacingSize } = require("discord.js");
 const Lock = require("./schemas/lock.js");
 const LOCK_KEY = "hourlyIncomeLock";
 const moment = require("moment");
@@ -51,6 +51,7 @@ module.exports = {
         try {
             const now = new Date();
             const twelveHoursAgo = new Date(now.getTime() - (12 * 60 * 60 * 1000));
+            const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
 
             const reminders = await users.find({
                 "preferences.notifications.vote": "DM",
@@ -62,37 +63,58 @@ module.exports = {
 
             for (const user of reminders) {
                 try {
-                    const discordUser = await bot.users.fetch(user.userID);
-                    if (discordUser) {
-                        const userLocale = user.locale || 'en';
-                        const msgContent = i18n.getFixedT(userLocale)('events:interaction.vote_reminder_dm', { user: `<@${user.userID}>`, voteUrl: voteUrl });
+                    const userLocale = user.locale || 'en';
+                    const t = i18n.getFixedT(userLocale);
+                    const isInactive = user.lastActive && new Date(user.lastActive).getTime() < thirtyDaysAgo.getTime();
 
-                        const container = new ContainerBuilder()
-                            .setAccentColor(0x5865F2)
-                            .addSectionComponents(
-                                new SectionBuilder()
-                                    .addTextDisplayComponents(
-                                        new TextDisplayBuilder().setContent(`# ${e.discord_orbs} ${i18n.getFixedT(userLocale)('commands:vote.reminders_title')}`),
-                                        new TextDisplayBuilder().setContent(msgContent)
-                                    )
-                                    .setButtonAccessory(
-                                        new ButtonBuilder()
-                                            .setLabel("Vote Now")
-                                            .setStyle(ButtonStyle.Link)
-                                            .setURL(voteUrl)
-                                    )
-                            );
+                    const msgContent = t('events:interaction.vote_reminder_dm', { user: `<@${user.userID}>`, voteUrl: voteUrl });
 
-                        try {
-                            await discordUser.send({ components: [container], flags: MessageFlags.IsComponentsV2 });
-                            user.voteReminderSent = true;
-                            await user.save();
-                        } catch (sendErr) {
-                            logger.debug(`Failed to send vote DM to ${user.userID}, switching to INTERACTION:`, sendErr);
+                    const container = new ContainerBuilder()
+                        .setAccentColor(0x5865F2)
+                        .addSectionComponents(
+                            new SectionBuilder()
+                                .addTextDisplayComponents(
+                                    new TextDisplayBuilder().setContent(`# ${e.discord_orbs} ${t('commands:vote.reminders_title')}`),
+                                    new TextDisplayBuilder().setContent(msgContent)
+                                )
+                                .setButtonAccessory(
+                                    new ButtonBuilder()
+                                        .setLabel("Vote Now")
+                                        .setStyle(ButtonStyle.Link)
+                                        .setURL(voteUrl)
+                                )
+                        );
+
+                    if (isInactive) {
+                        container.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
+                        container.addTextDisplayComponents(
+                            new TextDisplayBuilder().setContent(`-# ${t('events:interaction.vote_reminder_inactive_notice')}`)
+                        );
+                    }
+
+                    const dmResult = await funcs.sendDM(bot, user.userID, { components: [container], flags: MessageFlags.IsComponentsV2 });
+                    
+                    if (dmResult.ok) {
+                        user.voteReminderSent = true;
+                        if (isInactive) {
+                            user.preferences.notifications.vote = "OFF";
+                        }
+                        await user.save();
+                    } else {
+                        const isDMError = dmResult.err?.code === 50007 ||
+                                          dmResult.err?.code === 50013 ||
+                                          dmResult.err?.message?.includes("Cannot send messages to this user") ||
+                                          dmResult.err?.message?.includes("Missing Permissions") ||
+                                          dmResult.err?.message?.includes("User not found");
+                        
+                        if (isDMError) {
+                            logger.debug(`Failed to send vote DM to ${user.userID}, switching to INTERACTION:`, dmResult.err);
                             user.preferences.notifications.vote = "INTERACTION";
                             user.preferences.notifications.voteNotice = true;
                             user.voteReminderSent = false;
                             await user.save();
+                        } else {
+                            logger.debug(`Failed to send vote DM to ${user.userID}:`, dmResult.err);
                         }
                     }
                 } catch (err) {

@@ -5,6 +5,8 @@ const commandMeta = require("../../util/i18n.js").getCommandMetadata();
 const connect4AI = require("../../util/connect4_ai.js");
 const Canvas = require('canvas');
 const GIFEncoder = require('gifencoder');
+const workerPool = require('../../util/workerPool.js');
+const logger = require('../../logger.js');
 
 const activeGames = new Map();
 const userToGame = new Map();
@@ -90,7 +92,23 @@ function removeGame(gameId) {
     activeGames.delete(gameId);
 }
 
-async function renderBoard(board, colors, lastMove = null, gameId = null) {
+async function renderBoardAsync(board, colors, lastMove = null, gameId = null) {
+    try {
+        const result = await workerPool.execute('connect4', {
+            type: 'render',
+            board,
+            colors,
+            lastMove,
+            gameId
+        });
+        return Buffer.from(result);
+    } catch (err) {
+        logger.warn(`[Connect4] Worker render failed, using main thread: ${err.message}`);
+        return renderBoardLocal(board, colors, lastMove, gameId);
+    }
+}
+
+async function renderBoardLocal(board, colors, lastMove = null, gameId = null) {
     if (lastMove) {
         return renderAnimatedBoard(board, colors, lastMove, gameId);
     }
@@ -528,13 +546,13 @@ module.exports = {
 
             let lastMove = null;
             if (!userStarts) {
-                const col = connect4AI.getAIMove(board);
+                const col = await connect4AI.getAIMoveAsync(board);
                 const row = connect4AI.dropPiece(board, col, PLAYER_2);
                 lastMove = { col, row, player: PLAYER_2 };
                 turn = PLAYER_1;
             }
 
-            const buffer = await renderBoard(board, colors, lastMove, gameId);
+            const buffer = await renderBoardAsync(board, colors, lastMove, gameId);
             logger.debug(`[/Connect4] Generated initial board buffer, size: ${buffer.length} bytes`);
             const attachName = `connect4_${Date.now()}_${Math.random().toString(36).slice(2)}.${lastMove ? 'gif' : 'png'}`;
             const attachment = new AttachmentBuilder(buffer, { name: attachName });
@@ -621,7 +639,7 @@ module.exports = {
             game.lastInteraction = Date.now();
             if (!game.lastInfo) game.lastInfo = {};
 
-            const buffer = await renderBoard(game.board, game.colors, null, gameId);
+            const buffer = await renderBoardAsync(game.board, game.colors, null, gameId);
             logger.debug(`[Connect4] Generated accept board buffer, size: ${buffer.length} bytes`);
             const attachName = `connect4_${Date.now()}_${Math.random().toString(36).slice(2)}.png`;
             game.lastInfo.attachmentName = attachName;
@@ -717,7 +735,7 @@ module.exports = {
                 }
 
                 await interaction.deferUpdate();
-                const buffer = await renderBoard(game.board, game.colors, lastMove, gameId);
+                const buffer = await renderBoardAsync(game.board, game.colors, lastMove, gameId);
                 logger.debug(`[Connect4] Generated win board buffer, size: ${buffer.length} bytes`);
                 const attachName = `connect4_${Date.now()}_${Math.random().toString(36).slice(2)}.gif`;
                 const attachment = new AttachmentBuilder(buffer, { name: attachName });
@@ -764,7 +782,7 @@ module.exports = {
                     flags: MessageFlags.IsComponentsV2
                 });
 
-                const buffer = await renderBoard(game.board, game.colors, lastMove, gameId);
+                const buffer = await renderBoardAsync(game.board, game.colors, lastMove, gameId);
                 logger.debug(`[Connect4] Generated move board buffer, size: ${buffer.length} bytes`);
                 const attachName1 = `connect4_${Date.now()}_${Math.random().toString(36).slice(2)}.gif`;
                 game.lastInfo.attachmentName = attachName1;
@@ -791,7 +809,7 @@ module.exports = {
                 });
 
                 await funcs.sleep(100);
-                const aiCol = connect4AI.getAIMove(game.board);
+                const aiCol = await connect4AI.getAIMoveAsync(game.board);
                 const aiRow = connect4AI.dropPiece(game.board, aiCol, game.turn);
                 const aiMove = { col: aiCol, row: aiRow, player: game.turn };
 
@@ -806,7 +824,7 @@ module.exports = {
                     removeGame(gameId);
                     if (aiWinner !== 'tie') connect4AI.recordGameResult(AI);
 
-                    const aiBuffer = await renderBoard(game.board, game.colors, aiMove, gameId);
+                    const aiBuffer = await renderBoardAsync(game.board, game.colors, aiMove, gameId);
                     const attachName2 = `connect4_${Date.now()}_${Math.random().toString(36).slice(2)}.gif`;
                     const aiAttach = new AttachmentBuilder(aiBuffer, { name: attachName2 });
                     let winMsg = (aiWinner === 'tie') ? t('common:games.tie') : t('common:games.you_lose');
@@ -827,7 +845,7 @@ module.exports = {
                 }
 
                 game.turn = game.userSide;
-                const finalBuffer = await renderBoard(game.board, game.colors, aiMove, gameId);
+                const finalBuffer = await renderBoardAsync(game.board, game.colors, aiMove, gameId);
                 const attachName3 = `connect4_${Date.now()}_${Math.random().toString(36).slice(2)}.gif`;
                 game.lastInfo.attachmentName = attachName3;
                 const finalAttach = new AttachmentBuilder(finalBuffer, { name: attachName3 });
@@ -874,7 +892,7 @@ module.exports = {
                     flags: MessageFlags.IsComponentsV2
                 });
 
-                const buffer = await renderBoard(game.board, game.colors, lastMove, gameId);
+                const buffer = await renderBoardAsync(game.board, game.colors, lastMove, gameId);
                 logger.debug(`[Connect4] Generated PvP move board buffer, size: ${buffer.length} bytes`);
                 const attachName4 = `connect4_${Date.now()}_${Math.random().toString(36).slice(2)}.gif`;
                 game.lastInfo.attachmentName = attachName4;

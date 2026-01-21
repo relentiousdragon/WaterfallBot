@@ -96,8 +96,12 @@ module.exports = {
                 visibleCommandCount += cmds.length;
             }
 
+            const me = interaction.guild?.members.me;
+            const serverAvatar = me && me.avatar ? me.avatarURL({ size: 2048 }) : null;
+            const botThumbnail = serverAvatar || interaction.client.user.displayAvatarURL({ size: 2048 });
+
             const section = new SectionBuilder()
-                .setThumbnailAccessory(new ThumbnailBuilder().setURL(interaction.client.user.displayAvatarURL({ size: 2048 })))
+                .setThumbnailAccessory(new ThumbnailBuilder().setURL(botThumbnail))
                 .addTextDisplayComponents(
                     new TextDisplayBuilder().setContent(`# ${e.slash_command} ${t('commands:help.title')}`),
                     new TextDisplayBuilder().setContent(`${t('commands:help.select_category')}\n${t('commands:help.support_server')}`)

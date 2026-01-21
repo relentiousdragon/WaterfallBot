@@ -159,8 +159,9 @@ const logger = {
     },
 
     neon: (msg) => {
-        const out = typeof msg === 'object' ? JSON.stringify(msg, null, 2) : msg;
-        console.log(`\x1b[95m${out}\x1b[0m`);
+        const out = typeof msg === 'object' ? JSON.stringify(msg, null, 2) : String(msg);
+        const colored = out.split("\n").map(line => `\x1b[95m${line}\x1b[0m`).join("\n");
+        console.log(colored);
     },
     gradient: (msg) => {
         const str = typeof msg === 'object' ? JSON.stringify(msg) : String(msg);
@@ -170,14 +171,16 @@ const logger = {
         console.log(out);
     },
     bigSuccess: (msg) => {
-        pinoLogger.info(`[SUCCESS] ${msg}`);
+        const out = typeof msg === 'object' ? JSON.stringify(msg, null, 2) : String(msg);
+        pinoLogger.info(`[SUCCESS] ${out}`);
         const border = "========================================";
-        console.log(`\n\x1b[32m${border}\n   ${msg}   \n${border}\x1b[0m\n`);
-        logger.alertSync(msg, "SUCCESS");
+        const coloredLines = `\n${border}\n${out.split('\n').map(l => `   ${l}   `).join('\n')}\n${border}`.split('\n').map(l => `\x1b[32m${l}\x1b[0m`).join('\n');
+        console.log(`\n${coloredLines}\n`);
+        logger.alertSync(out, "SUCCESS");
     },
 
     warnAlert: (...args) => {
-        const msg = args.join(" ");
+        const msg = args.map(a => (typeof a === 'object' ? JSON.stringify(a) : a)).join(" ");
         logger.warn(msg);
         logger.alertSync(msg, "WARN", { silent: false });
     },
@@ -192,9 +195,10 @@ const logger = {
 
     alertSync: async (msg, level = "INFO", options = {}) => {
         if (!webhookFatal) return;
+        const out = typeof msg === 'object' ? JSON.stringify(msg, null, 2) : String(msg);
         try {
             const finalOptions = { silent: true, ...options };
-            await sendWebhookImmediate(webhookFatal, msg, level, finalOptions);
+            await sendWebhookImmediate(webhookFatal, out, level, finalOptions);
         } catch (err) {
             console.error("webhook failed:", err.message);
         }
@@ -204,8 +208,6 @@ const logger = {
         return contextStorage.run(store, callback);
     },
     getContext: getContext,
-    setContext: () => { }, // Deprecated in favor of rrunWithContext
-    clearContext: () => { } // Deprecated
 };
 //
 module.exports = logger;

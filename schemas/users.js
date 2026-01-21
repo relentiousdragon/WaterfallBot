@@ -22,7 +22,6 @@ const userSchema = mongoose.Schema({
         notifications: {
             vote: { type: String, default: "OFF" }, // OFF, DM, INTERACTION
             voteThanks: { type: String, default: "DM" }, // OFF, DM
-            voteNotice: { type: Boolean, default: false },
             voteNotice: { type: Boolean, default: false }
         }
     },

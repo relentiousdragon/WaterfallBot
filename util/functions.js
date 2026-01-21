@@ -4,14 +4,47 @@ const axios = require("axios");
 const { loadImage } = require("canvas");
 const logger = require("../logger.js");
 const he = require('he');
+let _dmQueue = [];
+let _dmActive = 0;
+const DM_CONCURRENCY = 10;
+
+async function _processDMQueue() {
+    while (_dmActive < DM_CONCURRENCY && _dmQueue.length) {
+        const item = _dmQueue.shift();
+        _dmActive++;
+        (async () => {
+            try {
+                const discordUser = await item.bot.users.fetch(item.userId).catch(() => null);
+                if (!discordUser) return item.resolve({ ok: false, err: new Error('User not found') });
+                const res = await discordUser.send(item.payload);
+                item.resolve({ ok: true, res });
+            } catch (err) {
+                item.resolve({ ok: false, err });
+            } finally {
+                _dmActive--;
+                setImmediate(_processDMQueue);
+            }
+        })();
+    }
+}
 //
 module.exports = {
+    /**
+     * @param {string} bet - bet to check
+     * @returns {boolean} Result
+     */
     bet_check: function (bet) {
         if (bet.startsWith("-")) return false;
         if (isNaN(bet)) return false;
         if (bet.includes(".")) return false;
         if (bet.includes("Infinity")) return false;
+        return true;
     },
+    /**
+     * @param {number} cost - cost of item
+     * @param {number} amount - amount of item
+     * @returns {number} calculated cost
+     */
     costCalc(cost, amount) {
         //var amountT = amount + 1;
         //var amountTotal = amountT * amountT;
@@ -22,6 +55,11 @@ module.exports = {
         return Math.max(total, 100);
         //return total;
     },
+    /**
+     * @param {number} number - number to abbreviate
+     * @param {number} threshold - threshold for abbreviation
+     * @returns {string} abbreviated number
+     */
     abbr: function formatNumber(number, threshold = 1e8) {
         if (number < threshold) {
             return number.toLocaleString();
@@ -29,6 +67,13 @@ module.exports = {
             return millify(number, { precision: 2, lowercase: true });
         }
     },
+    /**
+     * @param {number} currentVal - current value
+     * @param {number} MaxValue - max value
+     * @param {number} MaxBars - max bars, default: 3
+     * @param {string} color - color, default: YELLOW
+     * @returns {string} progress bar
+     */
     progressBar: function (currentVal, MaxValue, MaxBars = 3, color = "YELLOW") {
         // WIP
         const emojis = {
@@ -85,6 +130,10 @@ module.exports = {
 
         return progressBar;
     },
+    /**
+     * @param {string} emojiString - discord emoji markdown string
+     * @returns {object} emoji object: name, id
+     */
     parseEmoji: function (emojiString) {
         if (!emojiString) return null;
         if (typeof emojiString === 'object' && emojiString.__isEmoji) {
@@ -96,9 +145,17 @@ module.exports = {
         }
         return emojiString;
     },
+    /**
+     * @param {number} ms - milliseconds to sleep
+     * @returns {Promise} Promise that resolves after ms milliseconds
+     */
     sleep: function (ms) {
         return new Promise(res => setTimeout(res, ms));
     },
+    /**
+     * @param {string} str - string to parse
+     * @returns {number} parsed number
+     */
     parseAbbr: function (str) {
         if (!str || typeof str !== 'string') return 0;
         const s = str.toLowerCase().replace(/,/g, '').trim();
@@ -128,6 +185,11 @@ module.exports = {
         if (!hasMatch) return 0;
         return Math.min(total, maxCap);
     },
+    /**
+     * @param {string} text - text to decode
+     * @param {string} domain - domain the text is from, optional
+     * @returns {string} decoded text
+     */
     decodeHtmlEntities: function (text, domain = '') {
         if (!text) return text;
 
@@ -155,11 +217,20 @@ module.exports = {
 
         return text;
     },
+    /**
+    * @param {string} text - text to truncate
+    * @param {number} max - max length of text, default 1024
+    * @returns {string} Result
+    */
     truncate: function (text, max = 1024) {
         if (!text) return '—';
         if (text.length <= max) return text;
         return text.slice(0, max - 3) + '...';
     },
+    /**
+    * @param {string} query - text to filter
+    * @returns {string} Result, [REDACTED] if api fails
+    */
     async filterString(query) {
         try {
             const response = await axios.get('https://www.purgomalum.com/service/json', {
@@ -170,9 +241,18 @@ module.exports = {
             return '[REDACTED]';
         }
     },
+    /**
+    * @param {string} domain - domain name
+    * @returns {string} Result
+    */
     async getLogoUrl(domain) {
         return `https://logo.clearbit.com/${domain}`;
     },
+    /**
+    * @param {string} url - image url
+    * @param {number} timeout - in ms (default 2s)
+    * @returns {boolean} Result
+    */
     async isImageUrl(url, timeout = 2000) {
         if (!url) return false;
         const imageExtensions = [".png", ".jpg", ".jpeg", ".gif", ".webp"];
@@ -193,6 +273,10 @@ module.exports = {
             return imageExtensions.some(ext => url.toLowerCase().includes(ext));
         }
     },
+    /**
+    * @param {string} url - image url
+    * @returns {{isValid: boolean, width: number, height: number, ratio: number}} Result
+    */
     async getImageInfo(url) {
         if (!url) return { isValid: false };
         try {
@@ -207,6 +291,10 @@ module.exports = {
             return { isValid: false };
         }
     },
+    /**
+    * @param {object} infractions - infractions array
+    * @returns {object} Result
+    */
     getRiskTier: function (infractions = []) {
         const tiers = [
             { level: 1, name: "Clear", color: "#2ecc71" },
@@ -228,6 +316,10 @@ module.exports = {
 
         return { ...tier, count: recentInfractions };
     },
+    /**
+     * @param {string} str - duration string, example: "1h 30s"
+     * @returns {number} duration in milliseconds
+     */
     parseDuration: function (str) {
         if (!str) return null;
         const units = {
@@ -261,6 +353,11 @@ module.exports = {
 
         return hasMatch ? totalMs : null;
     },
+    /**
+    * @param {string} ms - milliseconds
+    * @param {object} options - maxUnit, excludeWeeks
+    * @returns {string} Result
+    */
     formatDurationPretty: function (ms, options = {}) {
         const { maxUnit = 'y', excludeWeeks = true } = options;
 
@@ -335,6 +432,10 @@ module.exports = {
 
         return parts.join(' ') || '0s';
     },
+    /**
+    * @param {string} url
+    * @returns {{safe: boolean, reason: string}} Result
+    */
     async checkUrlSafety(url) {
         if (!url) return { safe: true };
         const knownGrabbers = [
@@ -387,6 +488,12 @@ module.exports = {
             }
             return { safe: true };
         }
+    },
+sendDM: function (bot, userId, payload) {
+        return new Promise(resolve => {
+            _dmQueue.push({ bot, userId, payload, resolve });
+            _processDMQueue();
+        });
     }
 };
 

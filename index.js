@@ -99,52 +99,67 @@ if (shardId == 0) {
 
             const voteThanksPref = data.preferences?.notifications?.voteThanks || "DM";
             if (voteThanksPref === "DM") {
-                try {
-                    const discordUser = await bot.users.fetch(user);
-                    if (discordUser) {
-                        const userLocale = data.locale || 'en';
-                        const t = i18n.getFixedT(userLocale);
+                const now = new Date();
+                const fourteenDaysAgo = new Date(now.getTime() - (14 * 24 * 60 * 60 * 1000));
+                const isActive = data.lastActive && new Date(data.lastActive).getTime() >= fourteenDaysAgo.getTime();
 
-                        const container = new ContainerBuilder()
-                            .setAccentColor(0x5865F2)
-                            .addSectionComponents(
-                                new SectionBuilder()
-                                    .addTextDisplayComponents(
-                                        new TextDisplayBuilder().setContent(`# ${e.gift} ${t('commands:preferences.vote_thanks_title')}`),
-                                        new TextDisplayBuilder().setContent(t('events:interaction.vote_thanks_dm'))
-                                    )
-                            );
+                if (isActive) {
+                    const userLocale = data.locale || 'en';
+                    const t = i18n.getFixedT(userLocale);
 
-                        if ((data.preferences?.notifications?.vote || "OFF") === "OFF") {
-                            container.addSectionComponents(
-                                new SectionBuilder()
-                                    .addTextDisplayComponents(
-                                        new TextDisplayBuilder().setContent(`-# ${t('commands:vote.reminders_description')}`)
-                                    )
-                                    .setButtonAccessory(
-                                        new ButtonBuilder()
-                                            .setCustomId(`vote_enable_reminders_${user}`)
-                                            .setLabel(t('commands:vote.enable_reminders'))
-                                            .setStyle(ButtonStyle.Success)
-                                            .setEmoji(funcs.parseEmoji(e.yellow_point))
-                                    )
-                            );
+                    const container = new ContainerBuilder()
+                        .setAccentColor(0x5865F2)
+                        .addSectionComponents(
+                            new SectionBuilder()
+                                .addTextDisplayComponents(
+                                    new TextDisplayBuilder().setContent(`# ${e.gift} ${t('commands:preferences.vote_thanks_title')}`),
+                                    new TextDisplayBuilder().setContent(t('events:interaction.vote_thanks_dm'))
+                                )
+                        );
+
+                    if ((data.preferences?.notifications?.vote || "OFF") === "OFF") {
+                        container.addSectionComponents(
+                            new SectionBuilder()
+                                .addTextDisplayComponents(
+                                    new TextDisplayBuilder().setContent(`-# ${t('commands:vote.reminders_description')}`)
+                                )
+                                .setButtonAccessory(
+                                    new ButtonBuilder()
+                                        .setCustomId(`vote_enable_reminders_${user}`)
+                                        .setLabel(t('commands:vote.enable_reminders'))
+                                        .setStyle(ButtonStyle.Success)
+                                        .setEmoji(funcs.parseEmoji(e.yellow_point))
+                                )
+                        );
+                    }
+                    container.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
+                    container.addTextDisplayComponents(
+                        new TextDisplayBuilder().setContent(`-# ${t('events:interaction.vote_thanks_footer')}`)
+                    )
+
+                    const dmResult = await funcs.sendDM(bot, user, { components: [container], flags: MessageFlags.IsComponentsV2 });
+
+                    if (!dmResult.ok) {
+                        const isDMError = dmResult.err?.code === 50007 ||
+                                          dmResult.err?.code === 50013 ||
+                                          dmResult.err?.message?.includes("Cannot send messages to this user") ||
+                                          dmResult.err?.message?.includes("Missing Permissions") ||
+                                          dmResult.err?.message?.includes("User not found");
+                        
+                        if (isDMError) {
+                            logger.warn(`Failed to send vote thanks DM to ${user}:`, dmResult.err);
+                            try {
+                                data.preferences.notifications.voteThanks = "OFF";
+                                await data.save();
+                            } catch (saveErr) {
+                                logger.error("Failed to update voteThanks preference for user:", saveErr);
+                            }
+                        } else {
+                            logger.error(`Unexpected error sending vote thanks DM to ${user}:`, dmResult.err);
                         }
-                        container.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
-                        container.addTextDisplayComponents(
-                            new TextDisplayBuilder().setContent(`-# ${t('events:interaction.vote_thanks_footer')}`)
-                        )
-
-                        await discordUser.send({ components: [container], flags: MessageFlags.IsComponentsV2 });
                     }
-                } catch (err) {
-                    logger.warn(`Failed to send vote thanks DM to ${user}, disabling preference:`, err);
-                    try {
-                        data.preferences.notifications.voteThanks = "OFF";
-                        await data.save();
-                    } catch (saveErr) {
-                        logger.error("Failed to update voteThanks preference for user:", saveErr);
-                    }
+                } else {
+                    logger.debug(`[Vote Webhook] User ${user} inactive (> 14 days), skipping vote thanks DM`);
                 }
             }
             return;

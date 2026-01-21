@@ -1,6 +1,6 @@
 # Waterfall Commands
 
-*Last updated: Thu, 15 Jan 2026 06:48:34 GMT*
+*Last updated: Fri, 16 Jan 2026 08:57:45 GMT*
 
 ## Commands
 
@@ -209,7 +209,7 @@ Show current performance metrics. (DEV ONLY)
 
 `🔧 Developer Only`
 
-Manually trigger hourly income or daily worker tasks (DEV ONLY)
+Manually trigger hourly or daily worker tasks (DEV ONLY)
 
 **Required Permissions:** Developer
 

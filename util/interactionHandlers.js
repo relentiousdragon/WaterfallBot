@@ -99,7 +99,7 @@ async function handleButtonInteraction(bot, interaction, users, settings, logger
         return;
     }
     if (interaction.customId.startsWith('preferences_')) {
-        const preferences = require('../slashCommands/gen/preferences.js');
+        const preferences = require('../slashCommands/bot/preferences.js');
         await preferences.handleButton(bot, interaction, t, logger);
         return;
     }
@@ -301,8 +301,12 @@ async function handleSelectMenuInteraction(bot, interaction, settings, logger) {
 
         const row = new ActionRowBuilder().addComponents(selectMenu);
 
+        const me = interaction.guild?.members.me;
+        const serverAvatar = me && me.avatar ? me.avatarURL({ size: 2048 }) : null;
+        const botThumbnail = serverAvatar || interaction.client.user.displayAvatarURL({ size: 2048 });
+
         const section = new SectionBuilder()
-            .setThumbnailAccessory(new ThumbnailBuilder().setURL(interaction.client.user.displayAvatarURL({ size: 2048 })))
+            .setThumbnailAccessory(new ThumbnailBuilder().setURL(botThumbnail))
             .addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(`# ${e.slash_command} ${t('events:handlers.category_commands', { cat: selectedCategory })}`),
                 new TextDisplayBuilder().setContent(commandList || t('events:handlers.no_commands'))

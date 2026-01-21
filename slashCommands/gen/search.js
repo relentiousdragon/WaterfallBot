@@ -2290,7 +2290,7 @@ async function handleDuckDuckGo(interaction, query, page = 1, profanityDetected 
             if (profanityDetected && results.length && results[0].isAbstract) {
                 results = results.slice(1);
             }
-            logger.info(`[DDG] JSON API returned ${results.length} results`);
+            logger.debug(`[DDG] JSON API returned ${results.length} results`);
         } catch (error) {
             logger.error(`[DDG] JSON API failed: ${error.message}`);
             return interaction.editReply({ content: `${e.pixel_cross} ${t('commands:search.search_error', { engine: 'DuckDuckGo' })}` });
@@ -2374,7 +2374,7 @@ async function handleDDGNews(interaction, query, page = 1, isPagination = false,
             results = newsResults.results.slice(0, 25);
             totalPages = results.length;
             setPaginationCache(sid, results, { query, totalPages, type: 'ddg_news' }, userId);
-            logger.info(`[DDG News] Found ${results.length} news articles for "${query}"`);
+            logger.debug(`[DDG News] Found ${results.length} news articles for "${query}"`);
         } catch (error) {
             logger.error(`[DDG News] Error: ${error.message}`);
             return interaction.editReply({ content: `${e.pixel_cross} ${t('commands:search.search_error', { engine: 'DuckDuckGo News' })}` });

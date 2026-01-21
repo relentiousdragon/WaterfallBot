@@ -1,4 +1,6 @@
 const Analytics = require("../schemas/analytics.js");
+const workerPool = require('./workerPool.js');
+const logger = require('../logger.js');
 
 const ROWS = 6;
 const COLS = 7;
@@ -286,9 +288,19 @@ function getAIMove(board) {
     const [col, minimaxScore] = minimax(board, 5, -Infinity, Infinity, true);
     return col;
 }
+
+async function getAIMoveAsync(board) {
+    try {
+        return await workerPool.execute('connect4', { type: 'ai', board });
+    } catch (err) {
+        logger.warn(`[Connect4 AI] Worker failed, using main thread: ${err.message}`);
+        return getAIMove(board);
+    }
+}
 //
 module.exports = {
     getAIMove,
+    getAIMoveAsync,
     checkWin,
     getWinningCoords,
     dropPiece,

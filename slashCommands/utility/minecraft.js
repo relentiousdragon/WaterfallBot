@@ -2,16 +2,7 @@ const { SlashCommandBuilder, MessageFlags, TextDisplayBuilder, ThumbnailBuilder,
 const axios = require('axios');
 const e = require("../../data/emoji.js");
 const commandMeta = require("../../util/i18n.js").getCommandMetadata();
-
-function decodeHtmlEntities(str) {
-    if (!str || typeof str !== "string") return str;
-    return str
-        .replace(/&amp;/g, "&")
-        .replace(/&lt;/g, "<")
-        .replace(/&gt;/g, ">")
-        .replace(/&quot;/g, "\"")
-        .replace(/&#39;/g, "'");
-}
+const { decodeHtmlEntities } = require("../../util/functions.js");
 
 function normalizeMotd(m) {
     if (!m) return null;

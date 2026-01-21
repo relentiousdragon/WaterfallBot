@@ -64,7 +64,14 @@ const EVENT_TO_LOG_GROUP = {
     'roleHierarchyUpdate': 'roles',
     'threadDelete': 'channels',
     'threadUpdate': 'channels',
-    'warnConfigUpdate': 'moderation'
+    'warnConfigUpdate': 'moderation',
+    'guildIconUpdate': 'expressions',
+    'guildBannerUpdate': 'expressions',
+    'guildNameUpdate': 'expressions',
+    'guildDescriptionUpdate': 'expressions',
+    'guildVanityURLUpdate': 'expressions',
+    'guildVerificationLevelUpdate': 'moderation',
+    'guildLocaleUpdate': 'moderation'
 };
 
 const PRIORITY = {
@@ -111,7 +118,14 @@ const EVENT_PRIORITY = {
     'stickerCreate': PRIORITY.LOW,
     'stickerUpdate': PRIORITY.LOW,
     'stickerDelete': PRIORITY.LOW,
-    'warnConfigUpdate': PRIORITY.MEDIUM
+    'warnConfigUpdate': PRIORITY.MEDIUM,
+    'guildIconUpdate': PRIORITY.LOW,
+    'guildBannerUpdate': PRIORITY.LOW,
+    'guildNameUpdate': PRIORITY.LOW,
+    'guildDescriptionUpdate': PRIORITY.LOW,
+    'guildVanityURLUpdate': PRIORITY.LOW,
+    'guildVerificationLevelUpdate': PRIORITY.MEDIUM,
+    'guildLocaleUpdate': PRIORITY.LOW
 };
 
 const BATCHABLE_EVENTS = [
@@ -1207,6 +1221,27 @@ async function logEvent(bot, guildId, eventType, data, providedDedupKey) {
                 break;
             case 'altDetectionTimeout':
                 result = { embed: buildAltDetectionTimeoutEmbed(data, bot, t) };
+                break;
+            case 'guildIconUpdate':
+                result = { embed: buildGuildIconUpdateEmbed(data, bot, t) };
+                break;
+            case 'guildBannerUpdate':
+                result = { embed: buildGuildBannerUpdateEmbed(data, bot, t) };
+                break;
+            case 'guildNameUpdate':
+                result = { embed: buildGuildNameUpdateEmbed(data, bot, t) };
+                break;
+            case 'guildDescriptionUpdate':
+                result = { embed: buildGuildDescriptionUpdateEmbed(data, bot, t) };
+                break;
+            case 'guildVanityURLUpdate':
+                result = { embed: buildGuildVanityURLUpdateEmbed(data, bot, t) };
+                break;
+            case 'guildVerificationLevelUpdate':
+                result = { embed: buildGuildVerificationLevelUpdateEmbed(data, bot, t) };
+                break;
+            case 'guildLocaleUpdate':
+                result = { embed: buildGuildLocaleUpdateEmbed(data, bot, t) };
                 break;
             default:
                 return;
@@ -2905,6 +2940,162 @@ function buildAltDetectionTimeoutEmbed(data, bot, t) {
             inline: false
         });
     }
+
+    return embed;
+}
+
+function buildGuildIconUpdateEmbed(data, bot, t) {
+    const { oldIconURL, newIconURL, moderator } = data;
+
+    const embed = new EmbedBuilder()
+        .setColor(0x6BCF7F)
+        .setTitle(`${WE.settings} ${t('modlog:guild_icon_updated')}`)
+        .setFooter({ text: "Waterfall", iconURL: bot.user.displayAvatarURL() })
+        .setTimestamp();
+
+    if (moderator) {
+        embed.addFields({ name: t('modlog:updated_by'), value: `${moderator.tag} (${moderator.id})`, inline: true });
+    }
+
+    if (newIconURL) {
+        embed.setThumbnail(newIconURL);
+    }
+
+    return embed;
+}
+
+function buildGuildBannerUpdateEmbed(data, bot, t) {
+    const { oldBannerURL, newBannerURL, moderator } = data;
+
+    const embed = new EmbedBuilder()
+        .setColor(0x6BCF7F)
+        .setTitle(`${WE.settings} ${t('modlog:guild_banner_updated')}`)
+        .setFooter({ text: "Waterfall", iconURL: bot.user.displayAvatarURL() })
+        .setTimestamp();
+
+    if (moderator) {
+        embed.addFields({ name: t('modlog:updated_by'), value: `${moderator.tag} (${moderator.id})`, inline: true });
+    }
+
+    if (newBannerURL) {
+        embed.setImage(newBannerURL);
+    }
+
+    return embed;
+}
+
+function buildGuildNameUpdateEmbed(data, bot, t) {
+    const { oldName, newName, moderator } = data;
+
+    const embed = new EmbedBuilder()
+        .setColor(0x6BCF7F)
+        .setTitle(`${WE.settings} ${t('modlog:guild_name_updated')}`)
+        .setFooter({ text: "Waterfall", iconURL: bot.user.displayAvatarURL() })
+        .setTimestamp();
+
+    if (moderator) {
+        embed.addFields({ name: t('modlog:updated_by'), value: `${moderator.tag} (${moderator.id})`, inline: true });
+    }
+
+    embed.addFields(
+        { name: t('modlog:before'), value: oldName || 'None', inline: true },
+        { name: t('modlog:after'), value: newName || 'None', inline: true }
+    );
+
+    return embed;
+}
+
+function buildGuildDescriptionUpdateEmbed(data, bot, t) {
+    const { oldDescription, newDescription, moderator } = data;
+
+    const embed = new EmbedBuilder()
+        .setColor(0x6BCF7F)
+        .setTitle(`${WE.settings} ${t('modlog:guild_description_updated')}`)
+        .setFooter({ text: "Waterfall", iconURL: bot.user.displayAvatarURL() })
+        .setTimestamp();
+
+    if (moderator) {
+        embed.addFields({ name: t('modlog:updated_by'), value: `${moderator.tag} (${moderator.id})`, inline: true });
+    }
+
+    const oldDesc = funcs.truncate(oldDescription || t('modlog:none'), 1024);
+    const newDesc = funcs.truncate(newDescription || t('modlog:none'), 1024);
+
+    embed.addFields(
+        { name: t('modlog:before'), value: oldDesc, inline: false },
+        { name: t('modlog:after'), value: newDesc, inline: false }
+    );
+
+    return embed;
+}
+
+function buildGuildVanityURLUpdateEmbed(data, bot, t) {
+    const { oldVanityURL, newVanityURL, moderator } = data;
+
+    const embed = new EmbedBuilder()
+        .setColor(0x6BCF7F)
+        .setTitle(`${WE.invite} ${t('modlog:guild_vanity_url_updated')}`)
+        .setFooter({ text: "Waterfall", iconURL: bot.user.displayAvatarURL() })
+        .setTimestamp();
+
+    if (moderator) {
+        embed.addFields({ name: t('modlog:updated_by'), value: `${moderator.tag} (${moderator.id})`, inline: true });
+    }
+
+    embed.addFields(
+        { name: t('modlog:before'), value: oldVanityURL ? `discord.gg/${oldVanityURL}` : t('modlog:none'), inline: true },
+        { name: t('modlog:after'), value: newVanityURL ? `discord.gg/${newVanityURL}` : t('modlog:none'), inline: true }
+    );
+
+    return embed;
+}
+
+function buildGuildVerificationLevelUpdateEmbed(data, bot, t) {
+    const { oldLevel, newLevel, moderator } = data;
+
+    const verificationLevels = {
+        0: t('modlog:verification_none'),
+        1: t('modlog:verification_low'),
+        2: t('modlog:verification_medium'),
+        3: t('modlog:verification_high'),
+        4: t('modlog:verification_very_high')
+    };
+
+    const embed = new EmbedBuilder()
+        .setColor(0xFFA502)
+        .setTitle(`${WE.settings} ${t('modlog:guild_verification_level_updated')}`)
+        .setFooter({ text: "Waterfall", iconURL: bot.user.displayAvatarURL() })
+        .setTimestamp();
+
+    if (moderator) {
+        embed.addFields({ name: t('modlog:updated_by'), value: `${moderator.tag} (${moderator.id})`, inline: true });
+    }
+
+    embed.addFields(
+        { name: t('modlog:before'), value: verificationLevels[oldLevel] || `Level ${oldLevel}`, inline: true },
+        { name: t('modlog:after'), value: verificationLevels[newLevel] || `Level ${newLevel}`, inline: true }
+    );
+
+    return embed;
+}
+
+function buildGuildLocaleUpdateEmbed(data, bot, t) {
+    const { oldLocale, newLocale, moderator } = data;
+
+    const embed = new EmbedBuilder()
+        .setColor(0x6BCF7F)
+        .setTitle(`${WE.settings} ${t('modlog:guild_locale_updated')}`)
+        .setFooter({ text: "Waterfall", iconURL: bot.user.displayAvatarURL() })
+        .setTimestamp();
+
+    if (moderator) {
+        embed.addFields({ name: t('modlog:updated_by'), value: `${moderator.tag} (${moderator.id})`, inline: true });
+    }
+
+    embed.addFields(
+        { name: t('modlog:before'), value: oldLocale || t('modlog:none'), inline: true },
+        { name: t('modlog:after'), value: newLocale || t('modlog:none'), inline: true }
+    );
 
     return embed;
 }

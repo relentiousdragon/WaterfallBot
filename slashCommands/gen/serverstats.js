@@ -974,6 +974,13 @@ module.exports = {
             }
 
         } catch (error) {
+            if (error.message === 'Worker timeout') {
+                if (interaction.deferred || interaction.replied) {
+                    return interaction.editReply({ content: `${e.pixel_cross} ${t('common:timeout_error')}` });
+                }
+                return interaction.reply({ content: `${e.pixel_cross} ${t('common:timeout_error')}`, flags: MessageFlags.Ephemeral });
+            }
+
             logger.error("[/serverstats] Error executing command:", error);
             if (interaction.deferred || interaction.replied) {
                 return interaction.editReply({ content: `${e.pixel_cross} An error occurred while executing the command.` });

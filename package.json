@@ -1,6 +1,6 @@
 {
     "name": "waterfallbot",
-    "version": "1.3.1",
+    "version": "1.3.2",
     "description": "Waterfall Discord Bot",
     "main": "bot.js",
     "scripts": {

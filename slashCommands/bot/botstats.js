@@ -26,7 +26,10 @@ module.exports = {
     dev: false,
     explicit: false,
     async execute(bot, interaction, funcs, settings, logger, t) {
-        const shardId = bot.shard.ids[0];
+        await interaction.reply({ content: `${e.loading} ${t("common:loading")}` });
+
+        try {
+            const shardId = bot.shard.ids[0];
         const shardUptime = process.uptime() * 1000;
         const formattedUptime = formatUptime(shardUptime);
         const totalShards = bot.shard.count;
@@ -107,10 +110,19 @@ module.exports = {
                 .setEmoji(parseEmoji(e.blurple_star))
         );
 
-        return interaction.reply({
+        return interaction.editReply({
+            content: null,
             components: [container, row],
             flags: MessageFlags.IsComponentsV2
         });
+        } catch (error) {
+            logger.error("[botstats]:", error);
+            return interaction.editReply({
+                content: `${e.error} ${t('common:error_occurred')}`,
+                components: [],
+                flags: MessageFlags.Ephemeral
+            });
+        }
     },
     help: {
         name: "botstats",

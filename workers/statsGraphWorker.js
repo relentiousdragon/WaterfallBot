@@ -1,9 +1,6 @@
+const { parentPort, workerData } = require('worker_threads');
 const Canvas = require('canvas');
 const GIFEncoder = require('gifencoder');
-const funcs = require('./functions.js');
-const path = require('path');
-const workerPool = require('./workerPool.js');
-const logger = require('../logger.js');
 
 try {
     const emojiFontPath = require.resolve('noto-color-emoji/ttf/NotoColorEmoji.ttf');
@@ -41,51 +38,41 @@ const FONTS = {
 
 const EMOJI_FONT = 'bold 15px Arial, "Noto Color Emoji", sans-serif';
 
+function abbr(num, threshold = 100000) {
+    if (num === undefined || num === null) return '0';
+    if (typeof num !== 'number') num = parseFloat(num) || 0;
+    if (num < threshold) return num.toLocaleString('en-US');
+    const units = ['', 'K', 'M', 'B', 'T'];
+    let unitIndex = 0;
+    while (Math.abs(num) >= 1000 && unitIndex < units.length - 1) {
+        num /= 1000;
+        unitIndex++;
+    }
+    return num.toFixed(1).replace(/\.0$/, '') + units[unitIndex];
+}
+
+function easeOutCubic(t) {
+    return 1 - Math.pow(1 - t, 3);
+}
+
+function easeInOutCubic(t) {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+function roundRect(ctx, x, y, width, height, radius) {
+    if (height <= 0) return;
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height);
+    ctx.lineTo(x, y + height);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+}
+
 async function renderLineChart(options) {
-    try {
-        const result = await workerPool.execute('stats', { type: 'lineChart', ...options }, 300000);
-        return Buffer.from(result);
-    } catch (err) {
-        if (err.message === 'Worker timeout') throw err;
-        logger.warn(`[StatsRenderer] Worker failed, using main thread: ${err.message}`);
-        return renderLineChartLocal(options);
-    }
-}
-
-async function renderBarChart(options) {
-    try {
-        const result = await workerPool.execute('stats', { type: 'barChart', ...options }, 300000);
-        return Buffer.from(result);
-    } catch (err) {
-        if (err.message === 'Worker timeout') throw err;
-        logger.warn(`[StatsRenderer] Worker failed, using main thread: ${err.message}`);
-        return renderBarChartLocal(options);
-    }
-}
-
-async function renderStatsCard(options) {
-    try {
-        const result = await workerPool.execute('stats', { type: 'statsCard', ...options }, 300000);
-        return Buffer.from(result);
-    } catch (err) {
-        if (err.message === 'Worker timeout') throw err;
-        logger.warn(`[StatsRenderer] Worker failed, using main thread: ${err.message}`);
-        return renderStatsCardLocal(options);
-    }
-}
-
-async function renderSegmentDonut(options) {
-    try {
-        const result = await workerPool.execute('stats', { type: 'segmentDonut', ...options }, 300000);
-        return Buffer.from(result);
-    } catch (err) {
-        if (err.message === 'Worker timeout') throw err;
-        logger.warn(`[StatsRenderer] Worker failed, using main thread: ${err.message}`);
-        return renderSegmentDonutLocal(options);
-    }
-}
-
-async function renderLineChartLocal(options) {
     const {
         data,
         labels,
@@ -165,7 +152,7 @@ async function renderLineChartLocal(options) {
                 ctx.fillStyle = COLORS.textDim;
                 ctx.font = FONTS.small;
                 ctx.textAlign = 'right';
-                ctx.fillText(formatNumber(value), padding.left - 12, y + 4);
+                ctx.fillText(abbr(value), padding.left - 12, y + 4);
             }
 
             if (labels && labels.length > 0) {
@@ -249,7 +236,7 @@ async function renderLineChartLocal(options) {
     });
 }
 
-async function renderBarChartLocal(options) {
+async function renderBarChart(options) {
     const {
         data,
         labels,
@@ -319,7 +306,7 @@ async function renderBarChartLocal(options) {
                 ctx.fillStyle = COLORS.textDim;
                 ctx.font = FONTS.small;
                 ctx.textAlign = 'right';
-                ctx.fillText(formatNumber(value), padding.left - 10, y + 4);
+                ctx.fillText(abbr(value), padding.left - 10, y + 4);
             }
 
             const maxVal = Math.max(...data);
@@ -383,12 +370,12 @@ async function renderBarChartLocal(options) {
                         ctx.fillStyle = COLORS.text;
                         ctx.font = FONTS.small;
                         ctx.textAlign = 'center';
-                        ctx.fillText(formatNumber(data[i]), x + barWidth / 2, y - 8);
+                        ctx.fillText(abbr(data[i]), x + barWidth / 2, y - 8);
                     } else if (bgBarHeight > 0 && bgPeakIndices.includes(i)) {
                         ctx.fillStyle = COLORS.textDim;
                         ctx.font = FONTS.tiny;
                         ctx.textAlign = 'center';
-                        ctx.fillText(formatNumber(options.backgroundData[i]), x + barWidth / 2, bgY - 4);
+                        ctx.fillText(abbr(options.backgroundData[i]), x + barWidth / 2, bgY - 4);
                     }
                 }
             }
@@ -406,7 +393,7 @@ async function renderBarChartLocal(options) {
     });
 }
 
-async function renderStatsCardLocal(options) {
+async function renderStatsCard(options) {
     const {
         stats,
         title = '',
@@ -464,34 +451,9 @@ async function renderStatsCardLocal(options) {
     return canvas.toBuffer();
 }
 
-function roundRect(ctx, x, y, width, height, radius) {
-    if (height <= 0) return;
-    ctx.beginPath();
-    ctx.moveTo(x + radius, y);
-    ctx.lineTo(x + width - radius, y);
-    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-    ctx.lineTo(x + width, y + height);
-    ctx.lineTo(x, y + height);
-    ctx.lineTo(x, y + radius);
-    ctx.quadraticCurveTo(x, y, x + radius, y);
-    ctx.closePath();
-}
-
-function formatNumber(num) {
-    return funcs.abbr(num, 1000);
-}
-
-function easeOutCubic(t) {
-    return 1 - Math.pow(1 - t, 3);
-}
-
-function easeInOutCubic(t) {
-    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-}
-
-async function renderSegmentDonutLocal(options) {
+async function renderSegmentDonut(options) {
     const {
-        data, //{ label, value, color }[]
+        data,
         title = '',
         width = 700,
         height = 300
@@ -604,7 +566,7 @@ async function renderSegmentDonutLocal(options) {
                 ctx.fillStyle = COLORS.textDim;
                 ctx.font = FONTS.tiny;
                 const pct = Math.round(segment.value / total * 100);
-                ctx.fillText(`${pct}% (${funcs.abbr(segment.value)})`, legendX + 18, legendY + 15);
+                ctx.fillText(`${pct}% (${abbr(segment.value)})`, legendX + 18, legendY + 15);
             });
 
             ctx.globalAlpha = 1;
@@ -618,7 +580,7 @@ async function renderSegmentDonutLocal(options) {
             ctx.font = 'bold 20px Arial';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(funcs.abbr(total), centerX, centerY - 8);
+            ctx.fillText(abbr(total), centerX, centerY - 8);
 
             ctx.fillStyle = COLORS.textDim;
             ctx.font = FONTS.tiny;
@@ -637,14 +599,33 @@ async function renderSegmentDonutLocal(options) {
         stream.on('end', () => resolve(Buffer.concat(chunks)));
     });
 }
-//
-module.exports = {
-    renderLineChart,
-    renderBarChart,
-    renderStatsCard,
-    renderSegmentDonut,
-    COLORS
-};
 
+(async () => {
+    try {
+        const { type, ...options } = workerData;
+        let result;
+
+        switch (type) {
+            case 'lineChart':
+                result = await renderLineChart(options);
+                break;
+            case 'barChart':
+                result = await renderBarChart(options);
+                break;
+            case 'statsCard':
+                result = await renderStatsCard(options);
+                break;
+            case 'segmentDonut':
+                result = await renderSegmentDonut(options);
+                break;
+            default:
+                throw new Error(`Unknown render type: ${type}`);
+        }
+
+        parentPort.postMessage({ data: result });
+    } catch (error) {
+        parentPort.postMessage({ error: error.message });
+    }
+})();
 
 // contributors: @relentiousdragon

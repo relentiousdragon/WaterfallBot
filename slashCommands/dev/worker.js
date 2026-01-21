@@ -2,13 +2,14 @@ const { SlashCommandBuilder, MessageFlags } = require("discord.js");
 const { send: sendHourly } = require("../../hourlyWorker.js");
 const dailyWorker = require("../../dailyWorker.js");
 const analyticsWorker = require("../../util/analyticsWorker.js");
-const { settings } = require("../../util/settingsModule.js");
+const { Server } = require("../../schemas/servers.js");
+//const { settings } = require("../../util/settingsModule.js");
 const e = require("../../data/emoji.js");
 //
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName("worker")
-		.setDescription("Manually trigger hourly income or daily worker tasks (DEV ONLY)")
+		.setDescription("Manually trigger hourly or daily worker tasks (DEV ONLY)")
 		.addStringOption(option =>
 			option.setName("type")
 				.setDescription("Specify which worker to run")
@@ -16,7 +17,8 @@ module.exports = {
 				.addChoices(
 					{ name: "hourly", value: "hourly" },
 					{ name: "daily", value: "daily" },
-					{ name: "export", value: "export" }
+					{ name: "export", value: "export" },
+					{ name: "welcome", value: "welcome" }
 				)
 		),
 	integration_types: [0, 1],
@@ -35,6 +37,18 @@ module.exports = {
 		} else if (type === "export") {
 			await analyticsWorker.exportAnalytics();
 			await interaction.editReply("Analytics Export triggered.");
+		} else if (type === "welcome") {
+			if (!interaction.guild) return interaction.editReply("This command can only be used in a server.");
+			if (!interaction.channel) return interaction.editReply("Channel not found.");
+
+			const serverData = await Server.findOne({ serverID: interaction.guild.id });
+			const preferredLang = serverData?.language || "en";
+			const botProfile = serverData?.botProfile || "Default";
+
+			const { sendWelcomeMessages } = require("../../events/guildCreate.js");
+			await sendWelcomeMessages(bot, interaction.channel, preferredLang, botProfile);
+
+			await interaction.editReply("Welcome messages triggered.");
 		} else {
 			await interaction.editReply("Invalid worker type specified.");
 		}

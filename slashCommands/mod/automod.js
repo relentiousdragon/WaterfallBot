@@ -2375,11 +2375,21 @@ async function handleDelete(interaction, t, logger) {
     }
 
     const ruleName = rule.name;
-    await rule.delete();
+    
+    try {
+        await rule.delete();
 
-    await interaction.editReply({
-        content: `${e.checkmark_green} ${t('commands:automod.delete_success', { name: ruleName })}`
-    });
+        await interaction.editReply({
+            content: `${e.checkmark_green} ${t('commands:automod.delete_success', { name: ruleName })}`
+        });
+    } catch (error) {
+        if (error.message && error.message.includes('Mention Spam AutoMod rule cannot be deleted')) {
+            return interaction.editReply({
+                content: `${e.deny} ${t('commands:automod.error_cannot_delete_mention_spam')}`
+            });
+        }
+        throw error;
+    }
 }
 
 async function handleToggle(interaction, t, logger) {
