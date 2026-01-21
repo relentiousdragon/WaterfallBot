@@ -181,5 +181,17 @@
     "bot_detection_kick": "Bot Detection Kick",
     "alt_detection_alert": "Potential Alt Account Detected",
     "alt_detection_timeout": "Alt Account Timeout",
-    "changes_around_line": "--- changes around line {{line}} ---"
+    "changes_around_line": "--- changes around line {{line}} ---",
+    "guild_icon_updated": "Server Icon Updated",
+    "guild_banner_updated": "Server Banner Updated",
+    "guild_name_updated": "Server Name Updated",
+    "guild_description_updated": "Server Description Updated",
+    "guild_vanity_url_updated": "Server Vanity URL Updated",
+    "guild_verification_level_updated": "Server Verification Level Updated",
+    "guild_locale_updated": "Server Language Updated",
+    "verification_none": "None",
+    "verification_low": "Low",
+    "verification_medium": "Medium",
+    "verification_high": "High",
+    "verification_very_high": "Very High"
 }
