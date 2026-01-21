@@ -16,6 +16,7 @@
         "vote_reminder_dm": "Hey {{user}}, you can vote again!",
         "vote_reminder_interaction": "Hey {{user}}, just a heads up: you can vote again! [Vote Here]({{voteUrl}})",
         "vote_reminder_fallback_notice": "Your vote notification setting was switched from DM to Interaction because the bot couldn't message you. Use `/preferences notifications` to switch back or disable reminders.",
+        "vote_reminder_inactive_notice": "We're pausing reminders since you've been inactive. Re-enable them anytime via `/preferences notifications`.",
         "vote_thanks_dm": "Thank you for voting for Waterfall! Your support helps the bot grow.",
         "vote_thanks_footer": "These DMs can be disabled by using `/preferences notifications`"
     },

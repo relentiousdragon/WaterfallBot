@@ -5,6 +5,7 @@
         "note2": "DO NOT TRANSLATE 'Waterfall', this is the bot's nickname and shouldn't be translated unless the context is the actual word Waterfall."
     },
     "error": "Une erreur est survenue lors de l'exécution de la commande.",
+    "timeout_error": "The operation timed out. Please try again later.",
     "categories": {
         "General": "Général",
         "Dev": "Développeur",
