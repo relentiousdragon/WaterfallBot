@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, Partials, WebhookClient, Events, ActivityType, Collection, ContainerBuilder, SectionBuilder, TextDisplayBuilder, ButtonBuilder, ButtonStyle, MessageFlags, SeparatorBuilder, SeparatorSpacingSize } = require("discord.js");
+const { Client, GatewayIntentBits, Partials, WebhookClient, Events, ActivityType, Collection, ContainerBuilder, SectionBuilder, TextDisplayBuilder, ButtonBuilder, ButtonStyle, MessageFlags, SeparatorBuilder, SeparatorSpacingSize, ThumbnailBuilder } = require("discord.js");
 const { i18n } = require("./util/i18n.js");
 const path = require("path");
 const requireAll = require("require-all");
@@ -114,6 +114,9 @@ if (shardId == 0) {
                                 .addTextDisplayComponents(
                                     new TextDisplayBuilder().setContent(`# ${e.gift} ${t('commands:preferences.vote_thanks_title')}`),
                                     new TextDisplayBuilder().setContent(t('events:interaction.vote_thanks_dm'))
+                                )
+                                .setThumbnailAccessory(
+                                    new ThumbnailBuilder().setURL(bot.user.displayAvatarURL())
                                 )
                         );
 
