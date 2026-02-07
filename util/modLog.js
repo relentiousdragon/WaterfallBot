@@ -25,6 +25,14 @@ const WE = {
     role: "<:role:1446165389099798729>"
 };
 
+function getServerAvatarURL(bot, guild, size = 2048) {
+    if (!guild) return bot.user.displayAvatarURL({ size });
+    const botMember = guild.members.me;
+    if (botMember?.avatar) {
+        return botMember.displayAvatarURL({ size });
+    }
+    return bot.user.displayAvatarURL({ size });
+}
 
 const EVENT_TO_LOG_GROUP = {
     'messageDelete': 'messages',
@@ -693,7 +701,7 @@ async function handleSendError(error, guildId, webhookKey, entry) {
 }
 
 async function sendBatchedLog(entry) {
-    const { webhookClient, bot, t, eventType, batchCount, batchData } = entry;
+    const { webhookClient, bot, t, eventType, batchCount, batchData, guildId } = entry;
 
     if (settings.debug === 'true' || settings.debug === true) {
         logger.debug(`[ModLog] Sending batched log: ${eventType} (count: ${batchCount})`);
@@ -909,12 +917,12 @@ async function sendBatchedLog(entry) {
     await webhookClient.send({
         embeds: [embed],
         username: 'Waterfall',
-        avatarURL: bot.user.displayAvatarURL()
+        avatarURL: getServerAvatarURL(bot, bot.guilds.cache.get(guildId))
     });
 }
 
 async function sendIndividualLog(entry) {
-    const { webhookClient, bot, embedsToSend, filesToSend, extraPayloads, eventType } = entry;
+    const { webhookClient, bot, embedsToSend, filesToSend, extraPayloads, eventType, guildId } = entry;
 
     if (settings.debug === 'true' || settings.debug === true) {
         const messageId = entry.data?.message?.id;
@@ -926,7 +934,7 @@ async function sendIndividualLog(entry) {
             embeds: embedsToSend,
             files: filesToSend || [],
             username: 'Waterfall',
-            avatarURL: bot.user.displayAvatarURL()
+            avatarURL: getServerAvatarURL(bot, bot.guilds.cache.get(guildId))
         });
 
         if (settings.debug === 'true' || settings.debug === true) {
@@ -1042,7 +1050,7 @@ async function logAction(bot, guildId, data) {
         await webhookClient.send({
             embeds: [embed],
             username: 'Waterfall',
-            avatarURL: bot.user.displayAvatarURL()
+            avatarURL: getServerAvatarURL(bot, bot.guilds.cache.get(guildId))
         });
     } catch (error) {
         logger.error(`Error logging moderation action: ${error.message}`);
@@ -1272,7 +1280,8 @@ async function logEvent(bot, guildId, eventType, data, providedDedupKey) {
             embedsToSend,
             filesToSend,
             extraPayloads: result.extraPayloads,
-            dedupKey
+            dedupKey,
+            guildId
         });
 
     } catch (error) {

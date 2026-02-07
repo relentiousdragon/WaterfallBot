@@ -46,8 +46,8 @@ module.exports = {
 
                     const stats = await ServerStats.findOne({ guildId });
                     if (stats) {
-                        const yesterday = moment().subtract(1, 'day').startOf('day').toDate();
-                        const nextDay = moment().subtract(1, 'day').endOf('day').toDate();
+                        const yesterday = moment.utc().subtract(1, 'day').startOf('day').toDate();
+                        const nextDay = moment.utc().subtract(1, 'day').endOf('day').toDate();
 
                         const dailyMessages = (stats.messageStats || [])
                             .filter(s => s.date >= yesterday && s.date <= nextDay)
@@ -63,9 +63,10 @@ module.exports = {
                         await ServerStats.updateOne(
                             { guildId },
                             {
+                                $pull: { dailySnapshots: { date: { $gte: yesterday, $lte: nextDay } } },
                                 $push: {
                                     dailySnapshots: {
-                                        date: new Date(),
+                                        date: yesterday,
                                         messages: dailyMessages,
                                         voiceMinutes: Math.floor(dailyVoice / 60),
                                         memberCount: memberCount
@@ -74,9 +75,23 @@ module.exports = {
                             }
                         );
 
+                        stats.dailySnapshots = stats.dailySnapshots || [];
+                        const dayIndex = stats.dailySnapshots.findIndex(s => moment.utc(s.date).isSame(moment.utc(yesterday), 'day'));
+                        const newSnap = {
+                            date: yesterday,
+                            messages: dailyMessages,
+                            voiceMinutes: Math.floor(dailyVoice / 60),
+                            memberCount: memberCount
+                        };
+                        if (dayIndex >= 0) {
+                            stats.dailySnapshots[dayIndex] = newSnap;
+                        } else {
+                            stats.dailySnapshots.push(newSnap);
+                        }
+
                         if (stats.exportConfig?.enabled && stats.exportConfig?.channelId) {
-                            const lastExport = stats.exportConfig.lastExportAt ? moment(stats.exportConfig.lastExportAt) : moment(0);
-                            const daysSinceExport = moment().diff(lastExport, 'days');
+                            const lastExport = stats.exportConfig.lastExportAt ? moment.utc(stats.exportConfig.lastExportAt) : moment.utc(0);
+                            const daysSinceExport = moment.utc().diff(lastExport, 'days');
 
                             if (daysSinceExport >= 30) {
                                 const exportChannel = bot.channels.cache.get(stats.exportConfig.channelId);
@@ -84,13 +99,13 @@ module.exports = {
                                     const csvRows = ["Date,Messages,Voice (Minutes),New Members"];
 
                                     for (let i = 29; i >= 0; i--) {
-                                        const date = moment().subtract(i, 'days');
+                                        const date = moment.utc().subtract(i, 'days');
                                         const startOfDay = date.clone().startOf('day');
                                         const endOfDay = date.clone().endOf('day');
                                         const dateStr = date.format('YYYY-MM-DD');
 
                                         const snapshot = stats.dailySnapshots.find(s =>
-                                            moment(s.date).isSame(date, 'day')
+                                            moment.utc(s.date).isSame(date, 'day')
                                         );
 
                                         if (snapshot) {
@@ -109,7 +124,7 @@ module.exports = {
                                     }
 
                                     const csvBuffer = Buffer.from(csvRows.join('\n'), 'utf-8');
-                                    const csvAttachment = new AttachmentBuilder(csvBuffer, { name: `stats_export_${guildId}_${moment().format('YYYY-MM-DD')}.csv` });
+                                    const csvAttachment = new AttachmentBuilder(csvBuffer, { name: `stats_export_${guildId}_${moment.utc().format('YYYY-MM-DD')}.csv` });
 
                                     const graphRenderer = require("./util/statsGraphRenderer.js");
                                     const { ContainerBuilder, SectionBuilder, TextDisplayBuilder, SeparatorBuilder, SeparatorSpacingSize, MediaGalleryBuilder, MediaGalleryItemBuilder, MessageFlags } = require('discord.js');
@@ -118,8 +133,8 @@ module.exports = {
                                     const dailyData = [];
                                     const labels = [];
                                     for (let i = 29; i >= 0; i--) {
-                                        const date = moment().subtract(i, 'days');
-                                        const snap = stats.dailySnapshots?.find(s => moment(s.date).isSame(date, 'day'));
+                                        const date = moment.utc().subtract(i, 'days');
+                                        const snap = stats.dailySnapshots?.find(s => moment.utc(s.date).isSame(date, 'day'));
                                         dailyData.push(snap?.messages || 0);
                                         labels.push(date.format('MM/DD'));
                                     }
@@ -174,16 +189,16 @@ module.exports = {
                                     });
 
                                     await exportChannel.send({
-                                        content: `${t('commands:serverstats.export_message_content')}\n-# ${moment().locale(server.language || 'en').format('MMMM D, YYYY')}`,
+                                        content: `${t('commands:serverstats.export_message_content')}\n-# ${moment.utc().locale(server.language || 'en').format('MMMM D, YYYY')}`,
                                         files: [csvAttachment],
                                         flags: MessageFlags.SuppressNotifications
                                     });
 
                                     await ServerStats.updateOne(
                                         { guildId },
-                                        { $set: { 'exportConfig.lastExportAt': new Date() } }
+                                        { $set: { 'exportConfig.lastExportAt': moment.utc().toDate() } }
                                     );
-                                    logger.debug(`[DailyWorker] Sent auto -export for guild ${guildId}`);
+                                    logger.debug(`[DailyWorker] Sent auto-export for guild ${guildId}`);
                                 } else {
                                     logger.warn(`[DailyWorker] Export channel ${stats.exportConfig.channelId} not found for guild ${guildId}, disabling export.`);
                                     await ServerStats.updateOne(

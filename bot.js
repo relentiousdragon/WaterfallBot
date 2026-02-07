@@ -15,11 +15,26 @@ let restartCount = 0;
 let lastRestartTime = Date.now();
 let restartInterval = 5000;
 let isReloading = false;
+let isSpawning = false;
+let lastSpawnAttempt = 0;
 
 const MAX_RESTARTS_PER_HOUR = 5;
 const MAX_BACKOFF = 900000;
+const MIN_SPAWN_INTERVAL = 2000;
 //
 function startBot() {
+    if (isSpawning) {
+        return;
+    }
+
+    const now = Date.now();
+    if (now - lastSpawnAttempt < MIN_SPAWN_INTERVAL) {
+        logger.warn(`Spawn attempt throttled (${MIN_SPAWN_INTERVAL}ms cooldown)`);
+        return;
+    }
+
+    isSpawning = true;
+    lastSpawnAttempt = now;
     logger.warn("Starting bot process...");
 
     botProcess = spawn("node", [botFilePath], {
@@ -32,6 +47,7 @@ function startBot() {
     });
 
     botProcess.on("exit", (code, signal) => {
+        isSpawning = false;
         if (shuttingDown) {
             logger.error(`Bot process exited during shutdown | code: ${code} | signal: ${signal}`);
             return;
@@ -52,15 +68,17 @@ function startBot() {
 
         if (isReloading) {
             isReloading = false;
-            logger.warn(`Reloading shard in ${restartInterval / 1000}s ...`);
-            setTimeout(startBot, restartInterval);
+            const delay = Math.max(restartInterval, MIN_SPAWN_INTERVAL);
+            logger.warn(`Reloading shard in ${delay / 1000}s ...`);
+            setTimeout(startBot, delay);
             restartInterval = Math.min(restartInterval * 2, MAX_BACKOFF);
             return;
         }
 
         if (code !== 0 && signal !== "SIGINT") {
-            logger.warn(`Restarting shard in ${restartInterval / 1000}s ...`);
-            setTimeout(startBot, restartInterval);
+            const delay = Math.max(restartInterval, MIN_SPAWN_INTERVAL);
+            logger.warn(`Restarting shard in ${delay / 1000}s ...`);
+            setTimeout(startBot, delay);
             restartInterval = Math.min(restartInterval * 2, MAX_BACKOFF);
         }
     });
@@ -364,6 +382,8 @@ function setupConsole() {
                 if (botProcess && botProcess.exitCode === null && botProcess.signalCode === null) {
                     isReloading = true;
                     restartInterval = 5000;
+                    lastSpawnAttempt = 0;
+                    isSpawning = false;
                     botProcess.kill('SIGTERM');
                 } else {
                     startBot();
@@ -522,6 +542,8 @@ let shuttingDown = false;
 async function shutdown(reason = "UNKNOWN") {
     if (shuttingDown) return;
     shuttingDown = true;
+    isSpawning = false;
+    lastSpawnAttempt = 0;
 
     logger.warn(`Received shutdown signal (${reason}) - cleaning up...`);
 

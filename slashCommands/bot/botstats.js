@@ -34,17 +34,24 @@ module.exports = {
         const formattedUptime = formatUptime(shardUptime);
         const totalShards = bot.shard.count;
 
-        const latency = Date.now() - interaction.createdTimestamp;
+           const startAPI = Date.now();
+        try {
+            await bot.rest.get("/users/@me");
+        } catch (err) {
+            logger.error("Error fetching API data:", err);
+        }
+        const latency = Date.now() - startAPI;
+        
         let latencyEmoji = "";
         let embedColor = 0x4756ff;
 
-        if (latency < 120) {
+        if (latency < 200) {
             latencyEmoji = e.lightning_green;
             embedColor = 0x1ABC9C;
-        } else if (latency < 200) {
+        } else if (latency < 300) {
             latencyEmoji = e.lightning_yellow;
             embedColor = 0xF1C40F;
-        } else if (latency < 300) {
+        } else if (latency < 400) {
             latencyEmoji = e.lightning_orange;
             embedColor = 0xE67E22;
         } else {
