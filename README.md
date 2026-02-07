@@ -5,7 +5,7 @@
 [![Support Server](https://img.shields.io/discord/1431000295265140751?color=5865F2&label=DevSiege%20Studios&logo=discord&logoColor=white)](https://discord.gg/qD3yfKGk5g)  
 ![License](https://img.shields.io/badge/License-GPL--3.0-blue)  
 ![Node.js](https://img.shields.io/badge/Node.js-22%2B-brightgreen)  
-![Version](https://img.shields.io/badge/Waterfall-1.1.0-00bfff)  
+![Version](https://img.shields.io/badge/Waterfall-1.3.3-00bfff)  
 [![Crowdin](https://badges.crowdin.net/waterfall/localized.svg)](https://crowdin.com/project/waterfall)
 
 </div>
