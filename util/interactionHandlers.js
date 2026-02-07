@@ -104,7 +104,7 @@ async function handleButtonInteraction(bot, interaction, users, settings, logger
         return;
     }
     if (interaction.customId.startsWith('vote_enable_reminders_')) {
-        const vote = require('../slashCommands/gen/vote.js');
+        const vote = require('../slashCommands/bot/vote.js');
         await vote.handleButton(bot, interaction, t, logger);
         return;
     }
@@ -192,10 +192,29 @@ async function handleButtonInteraction(bot, interaction, users, settings, logger
     if (interaction.customId === 'bot_credits') {
         const credits = require('../slashCommands/bot/credits.js');
         const container = credits.buildCreditsContainer(bot, interaction, t);
-        return interaction.reply({
-            components: [container],
-            flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2
-        });
+        try {
+            await interaction.reply({
+                components: [container],
+                flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2
+            });
+        } catch (err) {
+            if (err?.code === 10062 || (err?.message && err.message.includes("Unknown interaction"))) {
+                try {
+                    await interaction.followUp({
+                        components: [container],
+                        flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2
+                    });
+                } catch (err2) {
+                    await interaction.reply({
+                        components: [container],
+                        flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2
+                    });
+                }
+            } else {
+                throw err;
+            }
+        }
+        return;
     }
 }
 
@@ -251,15 +270,16 @@ async function handleSelectMenuInteraction(bot, interaction, settings, logger) {
         let commandList = "";
         for (let i = 0; i < categoryCommands.length; i++) {
             const cmd = categoryCommands[i];
-            const emoji = i === categoryCommands.length - 1 ? e.reply : e.reply_cont;
-            const betaBadge = cmd.beta ? ` ${e.badge_beta1}${e.badge_beta2}` : "";
-            const isNew = cmd.created && (Math.floor(Date.now() / 1000) - cmd.created) < 25 * 24 * 60 * 60;
-            const newBadge = isNew ? ` ${e.badge_new1}${e.badge_new2}` : "";
-
             const subcommands = cmd.data.options?.filter(opt =>
                 opt.constructor?.name === "SlashCommandSubcommandBuilder" ||
                 opt.toJSON()?.type === 1
             ) || [];
+            
+            const isLastCommand = i === categoryCommands.length - 1;
+            const emoji = isLastCommand && subcommands.length > 0 ? e.reply_cont : (isLastCommand ? e.reply : e.reply_cont);
+            const betaBadge = cmd.beta ? ` ${e.badge_beta1}${e.badge_beta2}` : "";
+            const isNew = cmd.created && (Math.floor(Date.now() / 1000) - cmd.created) < 25 * 24 * 60 * 60;
+            const newBadge = isNew ? ` ${e.badge_new1}${e.badge_new2}` : "";
 
             if (subcommands.length > 0) {
                 commandList += `${emoji} **/${cmd.name}**${betaBadge}${newBadge} - ${t(`commands:${cmd.name}.description`, { defaultValue: cmd.description })}\n`;

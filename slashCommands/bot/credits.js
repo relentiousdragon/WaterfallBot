@@ -18,17 +18,52 @@ module.exports = {
         try {
             const container = buildCreditsContainer(bot, interaction, t);
 
-            await interaction.reply({
-                components: [container],
-                flags: MessageFlags.IsComponentsV2
-            });
-
+            try {
+                await interaction.reply({
+                    components: [container],
+                    flags: MessageFlags.IsComponentsV2
+                });
+            } catch (err) {
+                if (err?.code === 10062 || (err?.message && err.message.includes("Unknown interaction"))) {
+                    try {
+                        await interaction.followUp({
+                            components: [container],
+                            flags: MessageFlags.IsComponentsV2
+                        });
+                    } catch (err2) {
+                        await interaction.reply({
+                            components: [container],
+                            flags: MessageFlags.IsComponentsV2
+                        });
+                    }
+                } else {
+                    throw err;
+                }
+            }
         } catch (error) {
             logger.error("[/Credits] Error:", error);
-            return interaction.reply({
-                content: `${e.pixel_cross} ${t('common:error')}`,
-                flags: MessageFlags.Ephemeral
-            });
+            try {
+                await interaction.reply({
+                    content: `${e.pixel_cross} ${t('common:error')}`,
+                    flags: MessageFlags.Ephemeral
+                });
+            } catch (err) {
+                if (err?.code === 10062 || (err?.message && err.message.includes("Unknown interaction"))) {
+                    try {
+                        await interaction.followUp({
+                            content: `${e.pixel_cross} ${t('common:error')}`,
+                            flags: MessageFlags.Ephemeral
+                        });
+                    } catch (err2) {
+                        await interaction.reply({
+                            content: `${e.pixel_cross} ${t('common:error')}`,
+                            flags: MessageFlags.Ephemeral
+                        });
+                    }
+                } else {
+                    logger.error("[/Credits] reply error message failed:", err);
+                }
+            }
         }
     },
     buildCreditsContainer,

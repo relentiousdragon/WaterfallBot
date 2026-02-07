@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, Partials, WebhookClient, Events, ActivityType, Collection, ContainerBuilder, SectionBuilder, TextDisplayBuilder, ButtonBuilder, ButtonStyle, MessageFlags, SeparatorBuilder, SeparatorSpacingSize } = require("discord.js");
+const { Client, GatewayIntentBits, Partials, WebhookClient, Events, ActivityType, Collection, ContainerBuilder, SectionBuilder, TextDisplayBuilder, ButtonBuilder, ButtonStyle, MessageFlags, SeparatorBuilder, SeparatorSpacingSize, ThumbnailBuilder } = require("discord.js");
 const { i18n } = require("./util/i18n.js");
 const path = require("path");
 const requireAll = require("require-all");
@@ -30,6 +30,11 @@ const shardCount = 1;
 let shardCache = null;
 let lastCacheUpdate = 0;
 const CACHE_TTL = 10000;
+
+let isClientReady = false;
+let isShuttingDown = false;
+const MAX_CONCURRENT_INSTANCES = 1;
+let instanceCount = 0;
 
 module.exports.settings = settings;
 module.exports.saveSettings = saveSettings;
@@ -112,8 +117,11 @@ if (shardId == 0) {
                         .addSectionComponents(
                             new SectionBuilder()
                                 .addTextDisplayComponents(
-                                    new TextDisplayBuilder().setContent(`# ${e.gift} ${t('commands:preferences.vote_thanks_title')}`),
+                                    new TextDisplayBuilder().setContent(`# ${e.confetti} ${t('commands:preferences.vote_thanks_title')}`),
                                     new TextDisplayBuilder().setContent(t('events:interaction.vote_thanks_dm'))
+                                )
+                                .setThumbnailAccessory(
+                                    new ThumbnailBuilder().setURL(bot.user.displayAvatarURL())
                                 )
                         );
 
@@ -549,6 +557,17 @@ async function postStats() {
 }
 
 bot.once(Events.ClientReady, async () => {
+    if (isClientReady) {
+        return;
+    }
+    isClientReady = true;
+    instanceCount++;
+    
+    if (instanceCount > MAX_CONCURRENT_INSTANCES) {
+        logger.fatal(`Multiple instances detected (count: ${instanceCount}). Killing excess instance to prevent duplication.`);
+        process.exit(1);
+    }
+
     logger.neon("-----------------------");
     logger.info(`Logged in as ${bot.user.tag}`);
     logger.info(`Shard ${shardId + 1}/${shardCount} online.`);
@@ -857,9 +876,24 @@ function traverseForCommand(dir, filename) {
     return null;
 }
 
-bot.login(process.env.token).catch(e => logger.error(e));
+bot.login(process.env.token).catch(e => {
+    logger.error(e);
+    process.exit(1);
+});
 mongoose.init();
 initI18n();
+
+process.once('SIGINT', () => {
+    isShuttingDown = true;
+    logger.warn('SIGINT received - shutting down gracefully');
+    process.exit(0);
+});
+
+process.once('SIGTERM', () => {
+    isShuttingDown = true;
+    logger.warn('SIGTERM received - shutting down gracefully');
+    process.exit(0);
+});
 
 process.on('message', async (message) => {
     if (message.type === 'reload-commands') {

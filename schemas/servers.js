@@ -23,7 +23,7 @@ const serverSchema = mongoose.Schema({
     warnThresholds: {
         type: Map,
         of: {
-            action: { type: String, enum: ['none', 'timeout', 'kick'], default: 'timeout' },
+            action: { type: String, enum: ['none', 'timeout', 'kick', 'ban'], default: 'timeout' },
             duration: { type: Number, default: 0 }
         },
         default: () => new Map([

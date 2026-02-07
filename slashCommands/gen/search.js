@@ -1772,7 +1772,7 @@ function buildStocksEmbed(stock, symbol, t, containerProp) {
     const sourceUrl = sourceName === 'Yahoo Finance' ? 'https://finance.yahoo.com/' : 'https://www.xignite.com/';
 
     const section = new SectionBuilder()
-        .setThumbnailAccessory(new ThumbnailBuilder().setURL('https://img.icons8.com/fluency/256/bullish.png'))
+        .setThumbnailAccessory(new ThumbnailBuilder().setURL('https://cdn3d.iconscout.com/3d/premium/thumb/stock-market-3d-icon-png-download-8747171.png'))
         .addTextDisplayComponents(
             new TextDisplayBuilder().setContent(`# ${changeEmoji} ${t('commands:search.stocks.title', { symbol: symbol.toUpperCase(), name: companyName })}`),
             new TextDisplayBuilder().setContent(`-# 🔗 [${sourceName}](${sourceUrl})`)
@@ -1873,7 +1873,7 @@ function buildTimeEmbed(timeResult, locationQuery, t, containerProp) {
         orderedContent.push(`-# **${t('commands:search.time.dst_active')}:** ${timezone.zonedst > 0 ? t('common:yes') : t('common:no')}`);
     }
 
-    const thumbnailUrl = 'https://img.icons8.com/3d-fluency/256/clock.png';
+    const thumbnailUrl = 'https://cdn3d.iconscout.com/3d/premium/thumb/clock-3d-icon-png-download-7097715.png';
 
     const section = new SectionBuilder()
         .setThumbnailAccessory(new ThumbnailBuilder().setURL(thumbnailUrl))
@@ -1954,7 +1954,7 @@ function buildCurrencyEmbed(currencyResult, from, to, amount, t, containerProp) 
     }
 
     const isExchangeApi = currencyResult.source_api === 'ExchangeRate-API';
-    const sourceIcon = 'https://img.icons8.com/3d-fluency/256/cash-in-hand.png';
+    const sourceIcon = 'https://static.vecteezy.com/system/resources/previews/071/064/273/non_2x/3d-icon-money-bag-in-hand-free-png.png';
     const sourceName = isExchangeApi ? 'ExchangeRate-API' : 'XE.com';
     const sourceUrl = isExchangeApi ? 'https://www.exchangerate-api.com/' : 'https://www.xe.com/';
 
@@ -2417,16 +2417,9 @@ async function handleAllLinks(interaction, query, realQuery, t) {
     ];
     const embed = new ContainerBuilder()
         .setAccentColor(0x4756ff)
-        .addSectionComponents(
-            new SectionBuilder()
-                .setThumbnailAccessory(
-                    new ThumbnailBuilder()
-                        .setURL(interaction.client.user.displayAvatarURL({ size: 2048 }))
-                )
-                .addTextDisplayComponents(
-                    new TextDisplayBuilder().setContent(`# ${t('commands:search.search_queries_title')}`),
-                    new TextDisplayBuilder().setContent(links.map(l => `${l.emoji} [${query}](${l.url})`).join('\n'))
-                )
+        .addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(`# ${t('commands:search.search_queries_title')}`),
+            new TextDisplayBuilder().setContent(links.map(l => `${l.emoji} [${query}](${l.url})`).join('\n'))
         )
         .addSeparatorComponents(
             new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true)

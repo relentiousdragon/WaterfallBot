@@ -6,6 +6,10 @@ const logger = require("./logger.js");
 const shardId = parseInt(process.env.SHARD_ID, 10);
 const totalShards = 1;
 
+let isSpawning = false;
+let lastSpawnAttempt = 0;
+const MIN_SPAWN_INTERVAL = 2000;
+
 const manager = new ShardingManager(path.join(__dirname, "index.js"), {
     token: process.env.token,
     totalShards: totalShards,
@@ -40,11 +44,16 @@ manager.spawn({ amount: totalShards, delay: 5000 })
     .then(() => {
         logger.bigSuccess(`Machine handling shard ${shardId} launched`);
     })
-    .catch(err => logger.fatal("ShardManager spawn failed: " + err));
+    .catch(err => {
+        logger.fatal("ShardManager spawn failed: " + err);
+        process.exit(1);
+    });
 
 function gracefulShutdown(signal) {
     logger.warn(`${signal} - shutting down shards...`);
     isShuttingDown = true;
+    isSpawning = false;
+    lastSpawnAttempt = 0;
     manager.shards.forEach(shard => {
         shard.kill();
     });

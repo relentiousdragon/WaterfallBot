@@ -25,7 +25,7 @@ module.exports = {
         return interaction.editReply('Done successfully')
     },
     help: {
-        name: "leave",
+        name: "_leave",
         description: "Leave a guild",
         category: "Dev",
         permissions: ["moderator"],

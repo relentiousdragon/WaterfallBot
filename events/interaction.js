@@ -191,12 +191,49 @@ module.exports = {
                     await interactionHandlers.handleNonCommandInteractions(bot, interaction, userId, users, alertCooldowns);
                 } catch (error) {
                     logger.error(error);
+                    const errorMsg = { content: `${e.pixel_warning} ${t('events:interaction.error_execution')}`, flags: MessageFlags.Ephemeral };
+                    let handled = false;
                     if (interaction.deferred) {
-                        await interaction.editReply({ content: `${e.pixel_warning} ${t('events:interaction.error_execution')}`, flags: MessageFlags.Ephemeral });
-                    } else if (interaction.replied) {
-                        await interaction.followUp({ content: `${e.pixel_warning} ${t('events:interaction.error_execution')}`, flags: MessageFlags.Ephemeral });
-                    } else {
-                        await interaction.reply({ content: `${e.pixel_warning} ${t('events:interaction.error_execution')}`, flags: MessageFlags.Ephemeral });
+                        try {
+                            await interaction.editReply(errorMsg);
+                            handled = true;
+                        } catch (err) {
+                            if (err?.code === 10062 || (err?.message && err.message.includes("Unknown interaction"))) {
+                                try {
+                                    await interaction.followUp(errorMsg);
+                                    handled = true;
+                                } catch (err2) {
+                                    logger.debug("[interaction.js] followUp failed:", err2);
+                                }
+                            } else {
+                                logger.debug("[interaction.js] editReply failed:", err);
+                            }
+                        }
+                    }
+                    if (!handled && interaction.replied) {
+                        try {
+                            await interaction.followUp(errorMsg);
+                            handled = true;
+                        } catch (err) {
+                            if (err?.code === 10062 || (err?.message && err.message.includes("Unknown interaction"))) {
+                                logger.warn("[interaction.js] followUp fallback to reply");
+                                try {
+                                    await interaction.reply(errorMsg);
+                                    handled = true;
+                                } catch (err2) {
+                                    logger.debug("[interaction.js] reply failed:", err2);
+                                }
+                            } else {
+                                logger.debug("[interaction.js] followUp failed:", err);
+                            }
+                        }
+                    }
+                    if (!handled) {
+                        try {
+                            await interaction.reply(errorMsg);
+                        } catch (err) {
+                            logger.error("[interaction.js] reply failed:", err);
+                        }
                     }
                 }
             });
