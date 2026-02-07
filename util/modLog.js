@@ -1691,7 +1691,7 @@ function generateDiff(oldText, newText, t, context = 2) {
         out.push('');
     }
 
-    return `${out.join('\n')}`;
+    return `${out.join('\n')}`.replace(/`/g, "'");
 }
 
 
