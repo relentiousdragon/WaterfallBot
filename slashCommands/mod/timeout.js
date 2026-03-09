@@ -42,7 +42,7 @@ module.exports = {
     beta: false,
     explicit: false,
     async execute(bot, interaction, funcs, settings, logger, t) {
-        const serverData = await Server.findOne({ serverID: interaction.guild.id }).lean();
+        const serverData = await Server.findOne({ serverID: interaction.guild.id }).lean().maxTimeMS(5000);
         const tS = i18n.getFixedT(serverData?.language || 'en');
 
         const user = interaction.options.getUser('user');

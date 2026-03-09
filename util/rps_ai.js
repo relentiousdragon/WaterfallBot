@@ -10,7 +10,7 @@ const BATCH_SIZE = 5;
 
 (async () => {
     try {
-        const stats = await Analytics.findOne({ timestamp: new Date(0) });
+        const stats = await Analytics.findOne({ timestamp: new Date(0) }).lean().maxTimeMS(5000);
         globalWaterfallWins = stats.rpsWaterfallWins || 0;
         globalHumanWins = stats.rpsHumanWins || 0;
     } catch (err) {
@@ -39,7 +39,7 @@ async function syncWithDB() {
                 }
             },
             { upsert: true, new: true }
-        );
+        ).maxTimeMS(5000);
 
         if (updated) {
             globalWaterfallWins = updated.rpsWaterfallWins;

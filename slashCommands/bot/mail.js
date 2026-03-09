@@ -60,7 +60,7 @@ module.exports = {
                 }
             }
 
-            const activeGlobalMails = await globalMails.find({ expiry: { $gt: currentTime } });
+            const activeGlobalMails = await globalMails.find({ expiry: { $gt: currentTime } }).lean().maxTimeMS(5000);
 
             const readGlobalIds = data.read_global_mails || [];
             const globalMailsToShow = activeGlobalMails;

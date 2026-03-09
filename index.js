@@ -286,7 +286,7 @@ if (shardId === 0 && process.env.CANARY !== "true") {
                 return res.json({ ok: true, shards: shardCache, cached: true });
             }
 
-            const all = await ShardStats.find().sort({ shardID: 1 }).lean().maxTimeMS(5000);
+            const all = await ShardStats.find().select('shardID guildCount userCount wsPing memory updatedAt crashed').sort({ shardID: 1 }).lean().maxTimeMS(5000);
             shardCache = all;
             lastCacheUpdate = now;
 
@@ -317,7 +317,7 @@ if (shardId === 0 && process.env.CANARY !== "true") {
             const cutoff = new Date();
             cutoff.setDate(cutoff.getDate() - days);
 
-            const data = await Analytics.find({ timestamp: { $gte: cutoff } }).sort({ timestamp: 1 }).lean();
+            const data = await Analytics.find({ timestamp: { $gte: cutoff } }).sort({ timestamp: 1 }).lean().maxTimeMS(5000);
             res.json({ ok: true, data });
         } catch (error) {
             logger.error("Error fetching analytics:", error);
@@ -445,7 +445,7 @@ async function updateShardMetrics() {
         const wsPing = bot.ws.ping;
         const uptimeSeconds = process.uptime();
 
-        await ShardStats.findOneAndUpdate(
+        const updatePromise = ShardStats.findOneAndUpdate(
             { shardID: shardId },
             {
                 $set: {
@@ -464,18 +464,28 @@ async function updateShardMetrics() {
                 $push: {
                     guildHistory: {
                         $each: [{ count: guildCount, timestamp: new Date() }],
-                        $slice: -50000
+                        $slice: -43200
                     },
                     userHistory: {
                         $each: [{ count: userCount, timestamp: new Date() }],
-                        $slice: -50000
+                        $slice: -43200
                     }
                 }
             },
             { upsert: true }
         );
+
+        const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Metrics query timeout - 10s exceeded')), 10000)
+        );
+
+        await Promise.race([updatePromise, timeoutPromise]);
     } catch (error) {
-        logger.error("Failed to update shard metrics:", error);
+        if (error.message.includes('timeout')) {
+            logger.warn(`Shard metrics update timed out - skipping this cycle`);
+        } else {
+            logger.error("Failed to update shard metrics:", error.message);
+        }
     }
 }
 
@@ -496,7 +506,7 @@ let analyticsExportJob = new cron.CronJob("0 0 1 * *", () => analyticsWorker.exp
 
 
 async function getTotalGuildCount() {
-    const shards = await ShardStats.find();
+    const shards = await ShardStats.find().select('guildCount').lean().maxTimeMS(5000);
     return shards.reduce((a, s) => a + (s.guildCount || 0), 0);
 }
 
@@ -529,7 +539,7 @@ async function updateStatus() {
 
 async function postStats() {
     try {
-        const shards = await ShardStats.find().sort({ shardID: 1 });
+        const shards = await ShardStats.find().select('guildCount').sort({ shardID: 1 }).lean().maxTimeMS(5000);
         const shardCounts = shards.map(s => s.guildCount || 0);
         const total = shardCounts.reduce((a, b) => a + b, 0);
 
