@@ -473,10 +473,10 @@ async function updateShardMetrics() {
                 }
             },
             { upsert: true }
-        );
+        ).maxTimeMS(20000);
 
         const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Metrics query timeout - 10s exceeded')), 10000)
+            setTimeout(() => reject(new Error('Metrics query timeout - 20s exceeded')), 20000)
         );
 
         await Promise.race([updatePromise, timeoutPromise]);
