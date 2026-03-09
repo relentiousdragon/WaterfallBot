@@ -460,23 +460,13 @@ async function updateShardMetrics() {
                     crashed: false,
                     lastCrash: null,
                     updatedAt: new Date()
-                },
-                $push: {
-                    guildHistory: {
-                        $each: [{ count: guildCount, timestamp: new Date() }],
-                        $slice: -43200
-                    },
-                    userHistory: {
-                        $each: [{ count: userCount, timestamp: new Date() }],
-                        $slice: -43200
-                    }
                 }
             },
             { upsert: true }
-        ).maxTimeMS(20000);
+        ).maxTimeMS(5000);
 
         const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Metrics query timeout - 20s exceeded')), 20000)
+            setTimeout(() => reject(new Error('Metrics query timeout - 5s exceeded')), 5000)
         );
 
         await Promise.race([updatePromise, timeoutPromise]);
@@ -486,6 +476,34 @@ async function updateShardMetrics() {
         } else {
             logger.error("Failed to update shard metrics:", error.message);
         }
+    }
+}
+
+async function updateShardHistory() {
+    if (process.env.CANARY === "true") {
+        return;
+    }
+    try {
+        const guildCount = bot.guilds.cache.size;
+        const userCount = bot.guilds.cache.reduce((acc, guild) => acc + guild.memberCount, 0);
+
+        await ShardStats.findOneAndUpdate(
+            { shardID: shardId },
+            {
+                $push: {
+                    guildHistory: {
+                        $each: [{ count: guildCount, timestamp: new Date() }],
+                        $slice: -9216
+                    },
+                    userHistory: {
+                        $each: [{ count: userCount, timestamp: new Date() }],
+                        $slice: -9216
+                    }
+                }
+            }
+        ).maxTimeMS(20000);
+    } catch (err) {
+        logger.warn(`History update failed: ${err.message}`);
     }
 }
 
@@ -600,6 +618,7 @@ bot.once(Events.ClientReady, async () => {
 
     updateShardMetrics();
     setInterval(updateShardMetrics, 60 * 1000);
+    setInterval(updateShardHistory, 5 * 60 * 1000);
     analyticsWorker.init(bot, settings);
 
     if (shardId === 0 && process.env.CANARY !== "true") {
