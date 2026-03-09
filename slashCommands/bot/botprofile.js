@@ -81,7 +81,7 @@ module.exports = {
 
         const COOLDOWN = 600000;
         try {
-            const serverData = await Server.findOne({ serverID: guildId });
+            const serverData = await Server.findOne({ serverID: guildId }).lean().maxTimeMS(5000);
             if (serverData) {
                 if (serverData.botProfile === profile) {
                     const formattedProfile = profileNames[profile] || (profile.charAt(0).toUpperCase() + profile.slice(1));
@@ -217,7 +217,7 @@ module.exports = {
 
         const COOLDOWN = 600000;
         try {
-            const serverData = await Server.findOne({ serverID: guildId });
+            const serverData = await Server.findOne({ serverID: guildId }).lean().maxTimeMS(5000);
             if (serverData) {
                 if (serverData.botProfile === profile) {
                     const formattedProfile = profileNames[profile] || profile;

@@ -57,7 +57,7 @@ module.exports = {
                 "preferences.notifications.vote": "DM",
                 voteReminderSent: false,
                 lastVote: { $lte: twelveHoursAgo }
-            });
+            }).maxTimeMS(15000);
 
             const voteUrl = "https://top.gg/bot/1435231722714169435/vote";
 
@@ -122,7 +122,7 @@ module.exports = {
                 }
             }
 
-            const expiredMails = await GlobalMail.find({ expiry: { $lte: now } });
+            const expiredMails = await GlobalMail.find({ expiry: { $lte: now } }).maxTimeMS(15000);
             const logWebhook = new WebhookClient({ id: settings.logWebhook[0], token: settings.logWebhook[1] });
             for (const mail of expiredMails) {
                 try {

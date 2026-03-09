@@ -61,7 +61,7 @@ module.exports = {
 
         const status = settings.event === "maintenance" ? t('commands:botstats.status_maintenance') : t('commands:botstats.status_online');
 
-        let shardStatsDocs = await shardStats.find({});
+        let shardStatsDocs = await shardStats.find({}).select('guildCount userCount').lean().maxTimeMS(5000);
         let totalGuilds = shardStatsDocs.reduce((sum, doc) => sum + (doc.guildCount || 0), 0);
         let totalUsers = shardStatsDocs.reduce((sum, doc) => sum + (doc.userCount || 0), 0);
 

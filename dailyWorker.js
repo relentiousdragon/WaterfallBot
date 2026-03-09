@@ -15,7 +15,7 @@ module.exports = {
             const result = await Warns.updateMany(
                 { "warns.timestamp": { $lt: oneWeekAgo } },
                 { $pull: { warns: { timestamp: { $lt: oneWeekAgo } } } }
-            );
+            ).maxTimeMS(20000);
 
             if (result.modifiedCount > 0) {
                 logger.warnAlert(`[DailyWorker] Cleaned up expired warns from ${result.modifiedCount} users.`);
@@ -35,7 +35,7 @@ module.exports = {
         }
 
         try {
-            const statsEnabledServers = await Server.find({ "serverStats.enabled": true }).select("serverID language");
+            const statsEnabledServers = await Server.find({ "serverStats.enabled": true }).select("serverID language").maxTimeMS(20000);
 
             for (const server of statsEnabledServers) {
                 const guildId = server.serverID;

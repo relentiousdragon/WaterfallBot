@@ -12,7 +12,7 @@ async function getServerSettings(guildId) {
     if (cached && Date.now() - cached.timestamp < 60 * 1000) {
         return cached.data;
     }
-    const serverData = await Server.findOne({ serverID: guildId });
+    const serverData = await Server.findOne({ serverID: guildId }).lean().maxTimeMS(5000);
     statsCache.set(guildId, { data: serverData, timestamp: Date.now() });
     return serverData;
 }
@@ -22,7 +22,7 @@ function clearStatsCache(guildId) {
 }
 
 async function getMessageStats(guildId, days = 7) {
-    const stats = await ServerStats.findOne({ guildId });
+    const stats = await ServerStats.findOne({ guildId }).lean().maxTimeMS(5000);
     if (!stats?.messageStats?.length) return null;
 
     const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
@@ -41,7 +41,7 @@ async function getMessageStats(guildId, days = 7) {
 }
 
 async function getHourlyDistribution(guildId) {
-    const stats = await ServerStats.findOne({ guildId });
+    const stats = await ServerStats.findOne({ guildId }).lean().maxTimeMS(5000);
     if (!stats?.messageStats?.length) return null;
 
     const now = new Date();
@@ -73,7 +73,7 @@ async function getHourlyDistribution(guildId) {
 }
 
 async function getTopUsers(guildId, limit = 10, days = 30) {
-    const stats = await ServerStats.findOne({ guildId });
+    const stats = await ServerStats.findOne({ guildId }).lean().maxTimeMS(5000);
     if (!stats?.messageStats?.length) return [];
 
     const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
@@ -91,7 +91,7 @@ async function getTopUsers(guildId, limit = 10, days = 30) {
 }
 
 async function getTopChannels(guildId, limit = 10, days = 30) {
-    const stats = await ServerStats.findOne({ guildId });
+    const stats = await ServerStats.findOne({ guildId }).lean().maxTimeMS(5000);
     if (!stats?.messageStats?.length) return [];
 
     const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
@@ -109,7 +109,7 @@ async function getTopChannels(guildId, limit = 10, days = 30) {
 }
 
 async function getVcLeaderboard(guildId, limit = 10, days = 30) {
-    const stats = await ServerStats.findOne({ guildId });
+    const stats = await ServerStats.findOne({ guildId }).lean().maxTimeMS(5000);
     if (!stats?.vcSessions?.length) return [];
 
     const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
@@ -128,7 +128,7 @@ async function getVcLeaderboard(guildId, limit = 10, days = 30) {
 
 async function getInviteLeaderboard(guildId, limit = 10, days = 30) {
 
-    const stats = await ServerStats.findOne({ guildId });
+    const stats = await ServerStats.findOne({ guildId }).lean().maxTimeMS(5000);
     if (!stats?.memberJoins?.length) return [];
 
     const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
@@ -148,7 +148,7 @@ async function getInviteLeaderboard(guildId, limit = 10, days = 30) {
 }
 
 async function getUserStats(guildId, userId, days = 30) {
-    const stats = await ServerStats.findOne({ guildId });
+    const stats = await ServerStats.findOne({ guildId }).lean().maxTimeMS(5000);
     if (!stats) return null;
 
     const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
@@ -161,7 +161,7 @@ async function getUserStats(guildId, userId, days = 30) {
 }
 
 async function getTodaysMessages(guildId) {
-    const stats = await ServerStats.findOne({ guildId });
+    const stats = await ServerStats.findOne({ guildId }).lean().maxTimeMS(5000);
     if (!stats?.messageStats?.length) return 0;
 
     const now = new Date();
@@ -173,7 +173,7 @@ async function getTodaysMessages(guildId) {
 }
 
 async function getMemberSegments(guild, guildId, days = 7) {
-    const stats = await ServerStats.findOne({ guildId });
+    const stats = await ServerStats.findOne({ guildId }).lean().maxTimeMS(5000);
     if (!stats?.messageStats) return null;
 
     const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);

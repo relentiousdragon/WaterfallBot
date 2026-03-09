@@ -8,6 +8,7 @@ const RETRY_DELAY = 3000;
 let retries = 0;
 let isConnectedBefore = false;
 let isShuttingDown = false;
+let isReconnecting = false;
 
 async function close() {
     isShuttingDown = true;
@@ -31,15 +32,22 @@ module.exports = {
 
         async function connectWithRetry() {
             if (isShuttingDown) return;
+            
+            if (isReconnecting && retries > 0) return;
+            
+            isReconnecting = true;
 
             try {
                 console.log(`Attempting MongoDB connection... (attempt ${retries + 1}/${MAX_RETRIES})`);
 
                 await mongoose.connect(process.env.MONGO_URI, {
                     autoIndex: false,
-                    maxPoolSize: 10,
+                    maxPoolSize: 25,
+                    minPoolSize: 5,
                     serverSelectionTimeoutMS: 5000,
-                    socketTimeoutMS: 45000,
+                    socketTimeoutMS: 15000,
+                    maxIdleTimeMS: 30000,
+                    serverAPI: { version: '1', strict: true, deprecationErrors: true },
                 });
 
                 console.log("\x1b[32m%s\x1b[0m", "Mongoose connection established.");
@@ -47,9 +55,13 @@ module.exports = {
 
                 isConnectedBefore = true;
                 retries = 0;
+                isReconnecting = false;
 
             } catch (err) {
-                if (isShuttingDown) return;
+                if (isShuttingDown) {
+                    isReconnecting = false;
+                    return;
+                }
 
                 retries++;
 
@@ -58,11 +70,15 @@ module.exports = {
                 if (retries >= MAX_RETRIES) {
                     console.error("\x1b[31m%s\x1b[0m", "Max retry attempts reached. Exiting process.");
                     await logger.alertSync("[MONGOOSE] Max connection retry attempts reached. Exiting process.", "FATAL");
+                    isReconnecting = false;
                     process.exit(1);
                 }
 
                 console.log(`Retrying in ${RETRY_DELAY / 1000} seconds...`);
-                setTimeout(connectWithRetry, RETRY_DELAY);
+                setTimeout(() => {
+                    isReconnecting = false;
+                    connectWithRetry();
+                }, RETRY_DELAY);
             }
         }
 
@@ -71,6 +87,13 @@ module.exports = {
         mongoose.connection.on("error", (err) => {
             console.error("\x1b[31m%s\x1b[0m", `Mongoose error: ${err.message}`);
         });
+
+        setInterval(() => {
+            if (mongoose.connection.readyState === 1) {
+                const poolSize = mongoose.connection.collection("__pool__")?.client?.topology?.s?.pool?.totalConnectionCount || "unknown";
+                console.log(`[Mongoose] Pool: ready | heap: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`);
+            }
+        }, 300000);
 
         mongoose.connection.on("disconnected", () => {
             if (isShuttingDown) {
@@ -83,8 +106,11 @@ module.exports = {
 
             if (!isConnectedBefore) return;
 
-            console.log("Attempting reconnection...");
-            connectWithRetry();
+            if (!isReconnecting) {
+                retries = 0;
+                console.log("Attempting reconnection...");
+                connectWithRetry();
+            }
         });
 
         mongoose.connection.on("connected", () => {

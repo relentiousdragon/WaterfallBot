@@ -44,7 +44,7 @@ async function flushData(bot) {
             { timestamp: hourStart },
             update,
             { upsert: true, new: true }
-        );
+        ).maxTimeMS(5000);
 
         if (settings.debug == "true") {
             logger.debug(`[Analytics] Successfully flushed to DB for hour ${hourStart.toISOString()}`);
@@ -72,7 +72,7 @@ async function updateTopCommandsCache() {
         const cutoff = new Date();
         cutoff.setDate(cutoff.getDate() - 30);
 
-        const data = await Analytics.find({ timestamp: { $gte: cutoff } }).lean();
+        const data = await Analytics.find({ timestamp: { $gte: cutoff } }).lean().maxTimeMS(10000);
 
         const usage = {};
         data.forEach(entry => {
@@ -101,7 +101,7 @@ async function updateTopCommandsCache() {
 async function exportAnalytics() {
     try {
         const now = new Date();
-        const data = await Analytics.find({}).sort({ timestamp: 1 }).lean();
+        const data = await Analytics.find({}).sort({ timestamp: 1 }).lean().maxTimeMS(10000);
 
         if (data.length === 0) {
             logger.info("Analytics Export: No data to export.");
@@ -217,7 +217,7 @@ async function exportAnalytics() {
         let startServers = 0, startUsers = 0;
 
         try {
-            const allShards = await ShardStats.find({});
+            const allShards = await ShardStats.find({}).select('guildCount userCount guildHistory').lean().maxTimeMS(5000);
             const startDate = new Date();
             startDate.setDate(startDate.getDate() - 30);
 

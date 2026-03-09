@@ -1466,15 +1466,15 @@ async function buildMessageEditEmbed(data, bot, t) {
         const oldContentRaw = oldMessage.content || '';
         const newContentRaw = newMessage.content || '';
 
-        const useDiff = oldContentRaw.length > 150 || newContentRaw.length > 150;
+        const useDiff = oldContentRaw.length > 200 || newContentRaw.length > 200;
 
         if (useDiff) {
             const diff = generateDiff(oldContentRaw, newContentRaw, t);
-            const truncatedDiff = diff.length > 1000 ? diff.substring(0, 997) + '...' : diff;
+            const truncatedDiff = (diff.length > 2000 ? diff.substring(0, 1997) + '...' : diff).replace(/`/g, "'");
             embed.addFields({ name: t('modlog:content'), value: `\`\`\`diff\n${truncatedDiff}\n\`\`\`` });
         } else {
-            const oldContent = oldContentRaw.length > 1024 ? oldContentRaw.substring(0, 1021) + '...' : (oldContentRaw || `*${t('modlog:none') || 'None'}*`);
-            const newContent = newContentRaw.length > 1024 ? newContentRaw.substring(0, 1021) + '...' : (newContentRaw || `*${t('modlog:none') || 'None'}*`);
+            const oldContent = oldContentRaw.length > 2048 ? oldContentRaw.substring(0, 2045) + '...' : (oldContentRaw || `*${t('modlog:none') || 'None'}*`);
+            const newContent = newContentRaw.length > 2048 ? newContentRaw.substring(0, 2045) + '...' : (newContentRaw || `*${t('modlog:none') || 'None'}*`);
 
             embed.addFields(
                 { name: t('modlog:before'), value: oldContent },
