@@ -30,8 +30,8 @@ const shardStatsSchema = mongoose.Schema({
     updatedAt: { type: Date, default: Date.now, index: true }
 }, { versionKey: false });
 
-shardStatsSchema.index({ 'guildHistory.timestamp': 1 }, { expireAfterSeconds: 2592000 });
-shardStatsSchema.index({ 'userHistory.timestamp': 1 }, { expireAfterSeconds: 2592000 });
+shardStatsSchema.index({ 'guildHistory.timestamp': 1 }, { expireAfterSeconds: 2764800 });
+shardStatsSchema.index({ 'userHistory.timestamp': 1 }, { expireAfterSeconds: 2764800 });
 
 module.exports = mongoose.model("shardStats", shardStatsSchema);
 
