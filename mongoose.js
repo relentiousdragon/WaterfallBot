@@ -33,7 +33,7 @@ module.exports = {
         async function connectWithRetry() {
             if (isShuttingDown) return;
             
-            if (isReconnecting && retries > 0) return;
+            if (isReconnecting) return;
             
             isReconnecting = true;
 
@@ -48,6 +48,9 @@ module.exports = {
                     socketTimeoutMS: 15000,
                     maxIdleTimeMS: 30000,
                     serverAPI: { version: '1', strict: true, deprecationErrors: true },
+                    tls: true,
+                    retryWrites: true,
+                    directConnection: false,
                 });
 
                 console.log("\x1b[32m%s\x1b[0m", "Mongoose connection established.");
@@ -91,7 +94,7 @@ module.exports = {
         setInterval(() => {
             if (mongoose.connection.readyState === 1) {
                 const poolSize = mongoose.connection.collection("__pool__")?.client?.topology?.s?.pool?.totalConnectionCount || "unknown";
-                console.log(`[Mongoose] Pool: ready | heap: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`);
+                console.log(`[Mongoose] Pool: ${poolSize} | ready | heap: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`);
             }
         }, 300000);
 
