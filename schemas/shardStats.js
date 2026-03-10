@@ -16,12 +16,12 @@ const shardStatsSchema = mongoose.Schema({
 
     guildHistory: [{
         count: { type: Number, required: true },
-        timestamp: { type: Date, default: Date.now, index: true }
+        timestamp: { type: Date, default: Date.now }
     }],
 
     userHistory: [{
         count: { type: Number, required: true },
-        timestamp: { type: Date, default: Date.now, index: true }
+        timestamp: { type: Date, default: Date.now }
     }],
 
     crashed: { type: Boolean, default: false },
