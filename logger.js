@@ -91,7 +91,7 @@ async function sendWebhookImmediate(url, message, level = "INFO", options = {}) 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
     const isCanary = process.env.CANARY === 'true';
-    const titlePrefix = isCanary ? "YSCHIT MOM" : "BALD";
+    const titlePrefix = isCanary ? "CANARY" : "SYSTEM";
     const footerText = isCanary ? "CANARY" : `Shard ${process.env.SHARD_ID || 0}`;
 
     let color = 0x3B82F6;
@@ -213,4 +213,4 @@ const logger = {
 module.exports = logger;
 
 
-// contributors: @relentiousdragon
+// contributors: @relentiousdragon - @robelo06

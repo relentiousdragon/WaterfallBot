@@ -23,7 +23,7 @@
         "chalk": "^4.1.2",
         "cron": "^3.1.7",
         "discord.js": "^14.17.3",
-        "dotenv": "^16.4.7",
+        "dotenv": "^16.6.1",
         "duck-duck-scrape": "^2.2.7",
         "emojipedia": "^0.4.0",
         "express": "^4.21.2",
@@ -51,12 +51,12 @@
         "node": ">=22.0.0"
     },
     "overrides": {
-  "glob": "^9.0.0",
-  "rimraf": "^5.0.5",
-  "tar": "^7.4.0",
-  "inflight": "npm:lru-cache",
-  "are-we-there-yet": "^4.0.2",
-  "gauge": "^5.0.1",
-  "npmlog": "^7.0.1"
-}
+        "glob": "^9.0.0",
+        "rimraf": "^5.0.5",
+        "tar": "^7.4.0",
+        "inflight": "npm:lru-cache",
+        "are-we-there-yet": "^4.0.2",
+        "gauge": "^5.0.1",
+        "npmlog": "^7.0.1"
+    }
 }
