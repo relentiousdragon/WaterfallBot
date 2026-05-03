@@ -75,11 +75,11 @@ async function deployCommands() {
         logger.neon("Successfully reloaded global application commands.");
 
         await rest.put(
-            Routes.applicationGuildCommands(process.env.CLIENT_ID, "1440117235401363508"),
+            Routes.applicationGuildCommands(process.env.CLIENT_ID, "1484900113150382223"),
             { body: guildCommands },
         );
 
-        logger.neon("Successfully registered explicit commands in guild 1440117235401363508.");
+        logger.neon("Successfully registered explicit commands in guild 1484900113150382223.");
 
         if (process.env.CANARY !== "true") {
             const dblResponse = await axios.post(
