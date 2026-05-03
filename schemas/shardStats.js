@@ -14,24 +14,11 @@ const shardStatsSchema = mongoose.Schema({
 
     uptimeSeconds: { type: Number, default: 0 },
 
-    guildHistory: [{
-        count: { type: Number, required: true },
-        timestamp: { type: Date, default: Date.now }
-    }],
-
-    userHistory: [{
-        count: { type: Number, required: true },
-        timestamp: { type: Date, default: Date.now }
-    }],
-
     crashed: { type: Boolean, default: false },
     lastCrash: { type: Date, default: null },
 
     updatedAt: { type: Date, default: Date.now, index: true }
 }, { versionKey: false });
-
-shardStatsSchema.index({ 'guildHistory.timestamp': 1 }, { expireAfterSeconds: 2764800 });
-shardStatsSchema.index({ 'userHistory.timestamp': 1 }, { expireAfterSeconds: 2764800 });
 
 module.exports = mongoose.model("shardStats", shardStatsSchema);
 

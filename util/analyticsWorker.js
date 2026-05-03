@@ -1,5 +1,6 @@
 const Analytics = require("../schemas/analytics.js");
 const ShardStats = require("../schemas/shardStats.js");
+const ShardHistory = require("../schemas/shardHistory.js");
 const logger = require("../logger.js");
 const fs = require("fs");
 const path = require("path");
@@ -217,7 +218,7 @@ async function exportAnalytics() {
         let startServers = 0, startUsers = 0;
 
         try {
-            const allShards = await ShardStats.find({}).select('guildCount userCount guildHistory').lean().maxTimeMS(5000);
+            const allShards = await ShardStats.find({}).select('shardID guildCount userCount').lean().maxTimeMS(5000);
             const startDate = new Date();
             startDate.setDate(startDate.getDate() - 30);
 
@@ -225,50 +226,40 @@ async function exportAnalytics() {
             const userBuckets = new Map();
             const intervalMs = 60 * 60 * 1000;
 
+            const history = await ShardHistory.find({ timestamp: { $gte: startDate } }).lean();
+
             allShards.forEach(shard => {
                 currentServers += shard.guildCount || 0;
                 currentUsers += shard.userCount || 0;
+            });
 
-                const processShardHistory = (history, buckets) => {
-                    if (history && history.length > 0) {
-                        history.forEach(entry => {
-                            const entryTime = new Date(entry.timestamp);
-                            if (entryTime >= startDate) {
-                                const time = Math.floor(entryTime.getTime() / intervalMs) * intervalMs;
-                                if (!buckets.has(time)) buckets.set(time, []);
-                                buckets.get(time).push(entry.count);
-                            }
-                        });
-                    }
-                };
+            history.forEach(entry => {
+                const time = Math.floor(new Date(entry.timestamp).getTime() / intervalMs) * intervalMs;
+                if (!guildBuckets.has(time)) guildBuckets.set(time, []);
+                if (!userBuckets.has(time)) userBuckets.set(time, []);
+                
+                guildBuckets.get(time).push(entry.guildCount);
+                userBuckets.get(time).push(entry.userCount);
+            });
 
-                processShardHistory(shard.guildHistory, guildBuckets);
-                processShardHistory(shard.userHistory, userBuckets);
+            const shardStartServers = new Map();
+            const shardStartUsers = new Map();
 
-                if (shard.guildHistory && shard.guildHistory.length > 0) {
-                    const valid = shard.guildHistory.filter(h => new Date(h.timestamp) >= startDate);
-                    valid.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-                    if (valid.length > 0) startServers += valid[0].count;
-                    else startServers += shard.guildCount || 0;
-                } else {
-                    startServers += shard.guildCount || 0;
-                }
+            const sortedHistory = [...history].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            sortedHistory.forEach(entry => {
+                if (!shardStartServers.has(entry.shardID)) shardStartServers.set(entry.shardID, entry.guildCount);
+                if (!shardStartUsers.has(entry.shardID)) shardStartUsers.set(entry.shardID, entry.userCount);
+            });
 
-                if (shard.userHistory && shard.userHistory.length > 0) {
-                    const valid = shard.userHistory.filter(h => new Date(h.timestamp) >= startDate);
-                    valid.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-                    if (valid.length > 0) startUsers += valid[0].count;
-                    else startUsers += shard.userCount || 0;
-                } else {
-                    startUsers += shard.userCount || 0;
-                }
+            allShards.forEach(shard => {
+                startServers += shardStartServers.has(shard.shardID) ? shardStartServers.get(shard.shardID) : (shard.guildCount || 0);
+                startUsers += shardStartUsers.has(shard.shardID) ? shardStartUsers.get(shard.shardID) : (shard.userCount || 0);
             });
 
             const processBuckets = (buckets) => {
                 return Array.from(buckets.entries())
                     .sort((a, b) => a[0] - b[0])
                     .map(([timestamp, counts]) => {
-
                         const avg = counts.reduce((a, b) => a + b, 0) / counts.length;
                         return { timestamp, count: Math.round(avg * allShards.length) };
                     });
@@ -276,9 +267,10 @@ async function exportAnalytics() {
             var guildGrowthData = processBuckets(guildBuckets);
             var userGrowthData = processBuckets(userBuckets);
         } catch (err) {
-            logger.error("Analytics: Failed to fetch ShardStats", err);
+            logger.error("Analytics: Failed to fetch history from ShardHistory", err);
             currentServers = client ? client.guilds.cache.size : 0;
             currentUsers = client ? client.guilds.cache.reduce((acc, g) => acc + g.memberCount, 0) : 0;
+            startServers = currentServers;
             startUsers = currentUsers;
             var guildGrowthData = [];
             var userGrowthData = [];
