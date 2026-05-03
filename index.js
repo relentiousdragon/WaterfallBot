@@ -18,6 +18,7 @@ const hourlyWorker = require("./hourlyWorker.js");
 const dailyWorker = require("./dailyWorker.js");
 const users = require("./schemas/users.js");
 const ShardStats = require("./schemas/shardStats.js");
+const ShardHistory = require("./schemas/shardHistory.js");
 const Analytics = require("./schemas/analytics.js");
 const analyticsWorker = require("./util/analyticsWorker.js");
 const logger = require("./logger.js");
@@ -149,11 +150,11 @@ if (shardId == 0) {
 
                     if (!dmResult.ok) {
                         const isDMError = dmResult.err?.code === 50007 ||
-                                          dmResult.err?.code === 50013 ||
-                                          dmResult.err?.message?.includes("Cannot send messages to this user") ||
-                                          dmResult.err?.message?.includes("Missing Permissions") ||
-                                          dmResult.err?.message?.includes("User not found");
-                        
+                            dmResult.err?.code === 50013 ||
+                            dmResult.err?.message?.includes("Cannot send messages to this user") ||
+                            dmResult.err?.message?.includes("Missing Permissions") ||
+                            dmResult.err?.message?.includes("User not found");
+
                         if (isDMError) {
                             logger.warn(`Failed to send vote thanks DM to ${user}:`, dmResult.err);
                             try {
@@ -301,6 +302,20 @@ if (shardId === 0 && process.env.CANARY !== "true") {
         }
     });
 
+    app.get("/api/shards/:id/history", shardsLimiter, async (req, res) => {
+        try {
+            const id = parseInt(req.params.id, 10);
+            const history = await ShardHistory.find({ shardID: id })
+                .sort({ timestamp: -1 })
+                .limit(1000)
+                .lean();
+            res.json({ ok: true, history: history.reverse() });
+        } catch (error) {
+            logger.error("Error fetching shard history:", error);
+            res.status(500).json({ ok: false, error: "Internal Server Error" });
+        }
+    });
+
     logger.bigSuccess("Dashboard + API online");
 
     app.get("/insights", (req, res) => {
@@ -349,45 +364,20 @@ if (shardId === 0 && process.env.CANARY !== "true") {
                 intervalMs = 60 * 60 * 1000;
             }
 
-            const shards = await ShardStats.aggregate([
-                {
-                    $project: {
-                        shardID: 1,
-                        guildHistory: {
-                            $filter: {
-                                input: "$guildHistory",
-                                as: "entry",
-                                cond: { $gte: ["$$entry.timestamp", cutoffTime] }
-                            }
-                        },
-                        userHistory: {
-                            $filter: {
-                                input: "$userHistory",
-                                as: "entry",
-                                cond: { $gte: ["$$entry.timestamp", cutoffTime] }
-                            }
-                        }
-                    }
-                }
-            ]).option({ maxTimeMS: 5000 });
+            const history = await ShardHistory.find({ timestamp: { $gte: cutoffTime } })
+                .sort({ timestamp: 1 })
+                .lean();
 
-            const processHistory = (historyField) => {
+            const processHistory = (field) => {
                 const buckets = new Map();
 
-                shards.forEach(shard => {
-                    if (shard[historyField]) {
-                        shard[historyField].forEach(entry => {
-                            const entryTime = new Date(entry.timestamp);
-                            if (entryTime >= cutoffTime) {
-                                const time = Math.floor(entryTime.getTime() / intervalMs) * intervalMs;
-                                if (!buckets.has(time)) buckets.set(time, new Map());
+                history.forEach(entry => {
+                    const time = Math.floor(new Date(entry.timestamp).getTime() / intervalMs) * intervalMs;
+                    if (!buckets.has(time)) buckets.set(time, new Map());
 
-                                const shardMap = buckets.get(time);
-                                if (!shardMap.has(shard.shardID)) shardMap.set(shard.shardID, []);
-                                shardMap.get(shard.shardID).push(entry.count);
-                            }
-                        });
-                    }
+                    const shardMap = buckets.get(time);
+                    if (!shardMap.has(entry.shardID)) shardMap.set(entry.shardID, []);
+                    shardMap.get(entry.shardID).push(entry[field]);
                 });
 
                 return Array.from(buckets.entries())
@@ -402,8 +392,8 @@ if (shardId === 0 && process.env.CANARY !== "true") {
                     });
             };
 
-            const guildGrowth = processHistory('guildHistory');
-            const userGrowth = processHistory('userHistory');
+            const guildGrowth = processHistory('guildCount');
+            const userGrowth = processHistory('userCount');
 
             const responseData = { ok: true, guildGrowth, userGrowth };
 
@@ -487,21 +477,12 @@ async function updateShardHistory() {
         const guildCount = bot.guilds.cache.size;
         const userCount = bot.guilds.cache.reduce((acc, guild) => acc + guild.memberCount, 0);
 
-        await ShardStats.findOneAndUpdate(
-            { shardID: shardId },
-            {
-                $push: {
-                    guildHistory: {
-                        $each: [{ count: guildCount, timestamp: new Date() }],
-                        $slice: -9216
-                    },
-                    userHistory: {
-                        $each: [{ count: userCount, timestamp: new Date() }],
-                        $slice: -9216
-                    }
-                }
-            }
-        ).maxTimeMS(20000);
+        await new ShardHistory({
+            shardID: shardId,
+            guildCount: guildCount,
+            userCount: userCount,
+            timestamp: new Date()
+        }).save();
     } catch (err) {
         logger.warn(`History update failed: ${err.message}`);
     }
@@ -584,13 +565,42 @@ async function postStats() {
     }
 }
 
+async function postBotlistMeStats() {
+    if (!process.env.BOTLIST_AUTH) return;
+    try {
+        const shards = await ShardStats.find().select('guildCount').sort({ shardID: 1 }).lean().maxTimeMS(5000);
+        const shardCounts = shards.map(s => s.guildCount || 0);
+        const total = shardCounts.reduce((a, b) => a + b, 0);
+
+        const body = {
+            server_count: total,
+            shard_count: shardCount,
+        };
+
+        logger.debug("Posting to Botlist.me:", JSON.stringify(body, null, 2));
+
+        const res = await axios.post(
+            `https://api.botlist.me/api/v1/bots/${bot.user.id}/stats`,
+            body,
+            { headers: { authorization: process.env.BOTLIST_AUTH } }
+        );
+
+        logger.debug(`Botlist.me stats posted successfully (Shard ${shardId})`, res.status);
+    } catch (err) {
+        logger.error(
+            "Failed to post Botlist.me stats:",
+            JSON.stringify(err.response?.data || err, null, 2)
+        );
+    }
+}
+
 bot.once(Events.ClientReady, async () => {
     if (isClientReady) {
         return;
     }
     isClientReady = true;
     instanceCount++;
-    
+
     if (instanceCount > MAX_CONCURRENT_INSTANCES) {
         logger.fatal(`Multiple instances detected (count: ${instanceCount}). Killing excess instance to prevent duplication.`);
         process.exit(1);
@@ -614,6 +624,8 @@ bot.once(Events.ClientReady, async () => {
     if (shardId === 0 && process.env.CANARY !== "true") {
         setInterval(postStats, 30 * 60 * 1000);
         setTimeout(postStats, 15 * 1000);
+        setInterval(postBotlistMeStats, 30 * 60 * 1000);
+        setTimeout(postBotlistMeStats, 20 * 1000);
     }
 
     updateShardMetrics();
@@ -624,7 +636,22 @@ bot.once(Events.ClientReady, async () => {
     if (shardId === 0 && process.env.CANARY !== "true") {
         const { cleanupPendingDeletions } = require("./util/dataCleanup.js");
         cleanupPendingDeletions().catch(e => logger.error("Startup cleanup failed:", e));
-    }
+
+        // remove in next version
+        (async () => {
+            try {
+                const result = await ShardStats.updateMany(
+                    { $or: [{ guildHistory: { $exists: true } }, { userHistory: { $exists: true } }] },
+                    { $unset: { guildHistory: 1, userHistory: 1 } }
+                );
+                if (result.modifiedCount > 0) {
+                    logger.info(`removed old history data from ${result.modifiedCount} documents.`);
+                }
+            } catch (err) {
+                logger.error("Failed to clear old history data:", err);
+            }
+        })();
+    }  // 
 
     const inviteTracker = require("./util/inviteTracker.js");
     bot.guilds.cache.forEach(guild => inviteTracker.cacheInvites(guild));

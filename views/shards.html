@@ -831,7 +831,7 @@
         function analyzeStatus(shard) {
             const now = Date.now();
             const updated = new Date(shard.updatedAt).getTime();
-            const isStale = (now - updated) > 60000;
+            const isStale = (now - updated) > 120000;
 
             if (isStale) return { class: 'badge-offline', text: 'Offline', dot: '#ef4444' };
             if (shard.wsPing > 200 || shard.wsPing < 0) return { class: 'badge-unstable', text: 'Unstable', dot: '#f59e0b' };
@@ -979,7 +979,7 @@
         }
 
 
-        function openModal(shardID) {
+        async function openModal(shardID) {
             currentShardId = shardID;
             const shard = allShardsData.find(s => s.shardID === shardID);
 
@@ -989,7 +989,18 @@
             document.querySelectorAll('.ctrl-btn').forEach(b => b.classList.remove('active'));
             document.querySelector('[data-period="daily"]').classList.add('active');
 
-            renderChart(shard, 'daily');
+            try {
+                const response = await fetch(`/api/shards/${shardID}/history`);
+                const data = await response.json();
+                if (data.ok) {
+                    shard.guildHistory = data.history;
+                    renderChart(shard, 'daily');
+                } else {
+                    console.error('Failed to fetch shard history:', data.error);
+                }
+            } catch (error) {
+                console.error('Error fetching shard history:', error);
+            }
         }
 
         function closeModal() {
@@ -1015,7 +1026,7 @@
                 data.forEach(entry => {
                     const key = keyFn(new Date(entry.timestamp));
                     if (!grouped[key]) grouped[key] = [];
-                    grouped[key].push(entry.count);
+                    grouped[key].push(entry.guildCount || entry.count);
                 });
                 return grouped;
             };
