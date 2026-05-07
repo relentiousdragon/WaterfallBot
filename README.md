@@ -86,7 +86,7 @@ Use this link to invite the bot:
 ### 2. Install
 
 ```bash
-git clone https://github.com/DevSiege-Studios/waterfall.git
+git clone https://github.com/DevSiege-Studios/WaterfallBot.git
 cd waterfall
 npm install
 ```
