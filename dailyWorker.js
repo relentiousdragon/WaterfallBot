@@ -60,29 +60,29 @@ module.exports = {
                         const guild = bot.guilds.cache.get(guildId);
                         const memberCount = guild ? guild.memberCount : 0;
 
-                        await ServerStats.updateOne(
-                            { guildId },
-                            {
-                                $pull: { dailySnapshots: { date: { $gte: yesterday, $lte: nextDay } } },
-                                $push: {
-                                    dailySnapshots: {
-                                        date: yesterday,
-                                        messages: dailyMessages,
-                                        voiceMinutes: Math.floor(dailyVoice / 60),
-                                        memberCount: memberCount
-                                    }
-                                }
-                            }
-                        );
-
-                        stats.dailySnapshots = stats.dailySnapshots || [];
-                        const dayIndex = stats.dailySnapshots.findIndex(s => moment.utc(s.date).isSame(moment.utc(yesterday), 'day'));
                         const newSnap = {
                             date: yesterday,
                             messages: dailyMessages,
                             voiceMinutes: Math.floor(dailyVoice / 60),
                             memberCount: memberCount
                         };
+
+                        await ServerStats.updateOne(
+                            { guildId },
+                            {
+                                $pull: { dailySnapshots: { date: { $gte: yesterday, $lte: nextDay } } }
+                            }
+                        );
+
+                        await ServerStats.updateOne(
+                            { guildId },
+                            {
+                                $push: { dailySnapshots: newSnap }
+                            }
+                        );
+
+                        stats.dailySnapshots = stats.dailySnapshots || [];
+                        const dayIndex = stats.dailySnapshots.findIndex(s => moment.utc(s.date).isSame(moment.utc(yesterday), 'day'));
                         if (dayIndex >= 0) {
                             stats.dailySnapshots[dayIndex] = newSnap;
                         } else {
@@ -200,11 +200,7 @@ module.exports = {
                                     );
                                     logger.debug(`[DailyWorker] Sent auto-export for guild ${guildId}`);
                                 } else {
-                                    logger.warn(`[DailyWorker] Export channel ${stats.exportConfig.channelId} not found for guild ${guildId}, disabling export.`);
-                                    await ServerStats.updateOne(
-                                        { guildId },
-                                        { $set: { 'exportConfig.enabled': false } }
-                                    );
+                                    logger.warn(`[DailyWorker] Export channel ${stats.exportConfig.channelId} not found for guild ${guildId}, skipping this cycle.`);
                                 }
                             }
                         }

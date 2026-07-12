@@ -663,18 +663,26 @@
             });
 
             if (data.length >= 2) {
-                const midPoint = Math.floor(data.length / 2);
-                const firstHalf = data.slice(0, midPoint);
-                const secondHalf = data.slice(midPoint);
+                const timeStart = new Date(data[0].timestamp).getTime();
+                const timeEnd = new Date(data[data.length - 1].timestamp).getTime();
+                const timeMid = timeStart + (timeEnd - timeStart) / 2;
 
-                previousPeriodMessages = firstHalf.reduce((acc, cur) => acc + (cur.messages || 0), 0);
-                currentPeriodMessages = secondHalf.reduce((acc, cur) => acc + (cur.messages || 0), 0);
+                const prevEntries = data.filter(e => new Date(e.timestamp).getTime() <= timeMid);
+                const currEntries = data.filter(e => new Date(e.timestamp).getTime() > timeMid);
 
-                previousPeriodInteractions = firstHalf.reduce((acc, cur) => acc + (cur.interactions || 0), 0);
-                currentPeriodInteractions = secondHalf.reduce((acc, cur) => acc + (cur.interactions || 0), 0);
+                previousPeriodMessages = prevEntries.reduce((acc, cur) => acc + (cur.messages || 0), 0);
+                currentPeriodMessages = currEntries.reduce((acc, cur) => acc + (cur.messages || 0), 0);
 
-                updateTrend('messages-trend', currentPeriodMessages, previousPeriodMessages);
-                updateTrend('interactions-trend', currentPeriodInteractions, previousPeriodInteractions);
+                previousPeriodInteractions = prevEntries.reduce((acc, cur) => acc + (cur.interactions || 0), 0);
+                currentPeriodInteractions = currEntries.reduce((acc, cur) => acc + (cur.interactions || 0), 0);
+
+                const prevMsgAvg = prevEntries.length > 0 ? previousPeriodMessages / prevEntries.length : 0;
+                const currMsgAvg = currEntries.length > 0 ? currentPeriodMessages / currEntries.length : 0;
+                const prevIntAvg = prevEntries.length > 0 ? previousPeriodInteractions / prevEntries.length : 0;
+                const currIntAvg = currEntries.length > 0 ? currentPeriodInteractions / currEntries.length : 0;
+
+                updateTrend('messages-trend', currMsgAvg, prevMsgAvg);
+                updateTrend('interactions-trend', currIntAvg, prevIntAvg);
             }
 
 

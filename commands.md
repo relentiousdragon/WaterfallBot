@@ -1,15 +1,15 @@
 # Waterfall Commands
 
-*Last updated: Fri, 16 Jan 2026 08:57:45 GMT*
+*Last updated: Sun, 12 Jul 2026 19:56:20 GMT*
 
 ## Commands
 
 - 🤖 **Bot** (8)
 - 💻 **Dev** (13)
 - 🎲 **Games** (3)
-- 🧭 **General** (8)
-- 🛡️ **Moderation** (8)
-- ⚙️ **Utility** (6)
+- 🧭 **General** (9)
+- 🛡️ **Moderation** (9)
+- ⚙️ **Utility** (7)
 
 ---
 
@@ -303,6 +303,12 @@ View and manage server statistics
 
 ---
 
+### `/urban`
+
+Look up a word on Urban Dictionary
+
+---
+
 ### `/user`
 
 Get information about a user
@@ -387,6 +393,16 @@ Delete messages in bulk
 Get Role Informations
 
 **Required Permissions:** ManageRoles
+
+---
+
+### `/slowmode`
+
+Set the slowmode delay for a channel
+
+**Required Permissions:** ManageChannels
+
+**Bot Permissions:** ManageChannels
 
 ---
 
@@ -477,6 +493,12 @@ Minecraft utilities
 
 - `/minecraft server` - Get the status of a Minecraft Server
 - `/minecraft skin` - Get the skin of a Minecraft player
+
+---
+
+### `/translate`
+
+Translate text between languages
 
 ---
 

@@ -510,25 +510,22 @@ async function getTotalGuildCount() {
 }
 
 async function updateStatus() {
-    const statuses = [
-        { name: "your server!", type: ActivityType.Watching },
-    ];
-
     const status = process.env.CANARY === 'true' ? 'idle' : 'online';
-
-    let currentStatus = 0;
-    await bot.user.setActivity(statuses[currentStatus].name, { type: statuses[currentStatus].type });
+    await bot.user.setActivity("your server!", { type: ActivityType.Watching });
     await bot.user.setStatus(status);
 
+    let currentStatus = 0;
     setInterval(async () => {
         if (settings.event.toLowerCase() === "maintenance") {
             return bot.user.setActivity("MAINTENANCE 🛠", { type: ActivityType.Custom });
         }
 
         const totalServerCount = await getTotalGuildCount().catch(() => "~200");
-
-        statuses[1] = { name: `over ${totalServerCount} servers`, type: ActivityType.Watching };
-        statuses[2] = { name: "/help", type: ActivityType.Listening };
+        const statuses = [
+            { name: "your server!", type: ActivityType.Watching },
+            { name: `over ${totalServerCount} servers`, type: ActivityType.Watching },
+            { name: "/help", type: ActivityType.Listening },
+        ];
 
         currentStatus = (currentStatus + 1) % statuses.length;
 

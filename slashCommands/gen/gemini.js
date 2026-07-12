@@ -128,7 +128,7 @@ ALWAYS INCLUDE AN IMAGE LINK RELATED TO YOUR RESPONSE IN THE FIRST LINE IF YOU H
             .setAccentColor(0x4285F4)
             .addSectionComponents(
                 new SectionBuilder()
-                    .setThumbnailAccessory(new ThumbnailBuilder().setURL('https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Google_Bard_logo.svg/2048px-Google_Bard_logo.svg.png'))
+                    .setThumbnailAccessory(new ThumbnailBuilder().setURL('https://cdn.discordapp.com/attachments/1005773484028350506/1525954900780126350/xbrw1w6.gif'))
                     .addTextDisplayComponents(
                         new TextDisplayBuilder().setContent(`# ${e.icon_gemini1} ${t('commands:gemini.gemini_thinking')}\n-# ${e.loading} ${t('common:loading')},\n${t('commands:gemini.thinking_detail')}`)
                     )
@@ -337,7 +337,7 @@ ALWAYS INCLUDE AN IMAGE LINK RELATED TO YOUR RESPONSE IN THE FIRST LINE IF YOU H
                 if (lines.length <= 2 + btns.length) lines.push('No response.');
                 return lines.join('\n');
             }
-            const defaultThumb = 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Google_Bard_logo.svg/2048px-Google_Bard_logo.svg.png';
+            const defaultThumb = 'https://cdn.discordapp.com/attachments/1005773484028350506/1525954900780126350/xbrw1w6.gif';
             const defaultColor = '#5244ebff';
             text = cleanGeminiOutput(text, defaultThumb, defaultColor);
 
@@ -371,7 +371,7 @@ ALWAYS INCLUDE AN IMAGE LINK RELATED TO YOUR RESPONSE IN THE FIRST LINE IF YOU H
                 label = label.slice(0, 40);
                 return new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel(label).setURL(url);
             }).filter(Boolean);
-            let safeThumb = (thumbLine && thumbLine.trim().toLowerCase() !== 'default' && isValidImageUrl(thumbLine.trim())) ? thumbLine.trim() : 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Google_Bard_logo.svg/2048px-Google_Bard_logo.svg.png';
+            let safeThumb = (thumbLine && thumbLine.trim().toLowerCase() !== 'default' && isValidImageUrl(thumbLine.trim())) ? thumbLine.trim() : 'https://cdn.discordapp.com/attachments/1005773484028350506/1525954900780126350/xbrw1w6.gif';
             let safeColor = (colorLine && colorLine.trim().toLowerCase() !== 'default' && /^#([0-9a-f]{6})$/i.test(colorLine.trim())) ? colorLine.trim() : '#4285F4';
             async function validateImageUrl(url) {
                 try {
@@ -381,10 +381,10 @@ ALWAYS INCLUDE AN IMAGE LINK RELATED TO YOUR RESPONSE IN THE FIRST LINE IF YOU H
                 } catch (e) { }
                 return false;
             }
-            if (safeThumb !== 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Google_Bard_logo.svg/2048px-Google_Bard_logo.svg.png') {
+            if (safeThumb !== 'https://cdn.discordapp.com/attachments/1005773484028350506/1525954900780126350/xbrw1w6.gif') {
                 const valid = await validateImageUrl(safeThumb);
                 if (!valid) {
-                    safeThumb = 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Google_Bard_logo.svg/2048px-Google_Bard_logo.svg.png';
+                    safeThumb = 'https://cdn.discordapp.com/attachments/1005773484028350506/1525954900780126350/xbrw1w6.gif';
                 }
             }
             let accentColor = parseInt(safeColor.replace('#', ''), 16);
@@ -454,7 +454,7 @@ ALWAYS INCLUDE AN IMAGE LINK RELATED TO YOUR RESPONSE IN THE FIRST LINE IF YOU H
                 .setAccentColor(0xFF0000)
                 .addSectionComponents(
                     new SectionBuilder()
-                        .setThumbnailAccessory(new ThumbnailBuilder().setURL('https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Google_Bard_logo.svg/2048px-Google_Bard_logo.svg.png'))
+                        .setThumbnailAccessory(new ThumbnailBuilder().setURL('https://cdn.discordapp.com/attachments/1005773484028350506/1525954900780126350/xbrw1w6.gif'))
                         .addTextDisplayComponents(
                             new TextDisplayBuilder().setContent(`# ${e.icon_gemini1} Gemini\n-# Timestamp <t:${Math.floor(Date.now() / 1000)}:R>`)
                         )

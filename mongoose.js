@@ -47,14 +47,14 @@ module.exports = {
 
         async function connectWithRetry() {
             if (isShuttingDown) return;
-            
+
             if (isReconnecting) return;
-            
+
             if (reconnectTimeout) {
                 clearTimeout(reconnectTimeout);
                 reconnectTimeout = null;
             }
-            
+
             isReconnecting = true;
 
             try {
@@ -100,7 +100,7 @@ module.exports = {
 
                 const delayMs = Math.min(INITIAL_RETRY_DELAY * Math.pow(2, retries - 1), MAX_RETRY_DELAY);
                 console.log(`Retrying in ${delayMs / 1000} seconds...`);
-                
+
                 isReconnecting = false;
                 reconnectTimeout = setTimeout(() => {
                     connectWithRetry();
@@ -119,7 +119,7 @@ module.exports = {
                 try {
                     const client = mongoose.connection.getClient();
                     let poolSize = "unknown";
-                    
+
                     if (client?.topology?.s?.pool?.totalConnectionCount) {
                         poolSize = client.topology.s.pool.totalConnectionCount;
                     } else if (client?.topology?.pools?.has("mongodb")) {
@@ -129,8 +129,8 @@ module.exports = {
                     } else if (client?.topology?.connectionCount) {
                         poolSize = client.topology.connectionCount;
                     }
-                    
-                    console.log(`[Mongoose] Pool: ${poolSize} | ready | heap: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`);
+
+                    //console.log(`[Mongoose] Pool: ${poolSize} | ready | heap: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`);
                 } catch (e) {
                     console.log(`[Mongoose] Pool: unknown (${e.message}) | ready | heap: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`);
                 }
