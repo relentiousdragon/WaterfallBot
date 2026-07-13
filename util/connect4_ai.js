@@ -16,7 +16,14 @@ const BATCH_SIZE = 5;
 
 (async () => {
     try {
-        const stats = await Analytics.findOne({ timestamp: new Date(0) });
+        const mongoose = require('mongoose');
+        if (mongoose.connection.readyState !== 1) {
+            await new Promise((resolve, reject) => {
+                const timeout = setTimeout(() => reject(new Error('Connection timeout')), 15000);
+                mongoose.connection.once('connected', () => { clearTimeout(timeout); resolve(); });
+            });
+        }
+        const stats = await Analytics.findOne({ timestamp: new Date(0) }).maxTimeMS(5000);
         globalWaterfallWins = stats?.connect4WaterfallWins || 0;
         globalHumanWins = stats?.connect4HumanWins || 0;
     } catch (err) {

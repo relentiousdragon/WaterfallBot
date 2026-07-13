@@ -402,8 +402,7 @@ module.exports = {
                         {
                             $set: {
                                 'exportConfig.enabled': true,
-                                'exportConfig.channelId': channel.id,
-                                'exportConfig.lastExportAt': new Date()
+                                'exportConfig.channelId': channel.id
                             }
                         },
                         { upsert: true }
