@@ -1189,5 +1189,54 @@
         "pending_word": "Pending Word",
         "pending_note": "(will be set when current expires)",
         "previous_word": "Previous Word"
+    },
+    "urban": {
+        "name": "urban",
+        "description": "Look up a word on Urban Dictionary",
+        "option_word_name": "word",
+        "option_word_description": "The word or phrase to look up",
+        "looking_up": "Looking up on Urban Dictionary...",
+        "not_found": "Not Found",
+        "not_found_desc": "No Urban Dictionary entries found for **{{word}}**.",
+        "more_entries": "More Definitions",
+        "view_on_ud": "View on Urban Dictionary",
+        "error_generic": "Failed to fetch from Urban Dictionary. Please try again later."
+    },
+    "slowmode": {
+        "name": "slowmode",
+        "description": "Set the slowmode delay for a channel",
+        "option_duration_name": "duration",
+        "option_duration_description": "Slowmode delay in seconds (0 to disable, max 21600)",
+        "option_channel_name": "channel",
+        "option_channel_description": "Channel to set slowmode on (defaults to current channel)",
+        "setting": "Setting slowmode...",
+        "success_title": "Slowmode Updated",
+        "channel": "Channel",
+        "delay": "Delay",
+        "set_by": "Set by",
+        "disabled": "Disabled",
+        "error_permission": "You need the **Manage Channels** permission to use this command.",
+        "error_generic": "Failed to set slowmode: {{error}}"
+    },
+    "translate": {
+        "name": "translate",
+        "description": "Translate text between languages",
+        "option_text_name": "text",
+        "option_text_description": "Text to translate",
+        "option_target_name": "target",
+        "option_target_description": "Target language (defaults to your Discord language)",
+        "option_source_name": "source",
+        "option_source_description": "Source language (defaults to auto-detect)",
+        "translating": "Translating...",
+        "result_title": "Translation Result",
+        "original": "Original",
+        "translated": "Translated",
+        "same_language": "The text was already in the target language.",
+        "quality": "Quality",
+        "error_generic": "Failed to translate text. Please try again later."
+    },
+    "translateMessage": {
+        "name": "Translate Message",
+        "description": "Translate a message"
     }
 }
