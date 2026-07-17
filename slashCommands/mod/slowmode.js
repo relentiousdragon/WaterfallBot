@@ -49,7 +49,7 @@ module.exports = {
             .setAccentColor(0x5865F2)
             .addSectionComponents(
                 new SectionBuilder()
-                    .setThumbnailAccessory(new ThumbnailBuilder().setURL('https://cdn-icons-png.flaticon.com/512/2991/2991148.png'))
+                    .setThumbnailAccessory(new ThumbnailBuilder().setURL('https://cdn.discordapp.com/emojis/1444028041771880659.webp'))
                     .addTextDisplayComponents(
                         new TextDisplayBuilder().setContent(`# ${e.channel} ${t('commands:slowmode.setting')}\n-# ${e.loading} ${t('common:loading')}`)
                     )
@@ -65,13 +65,13 @@ module.exports = {
             await channel.setRateLimitPerUser(duration, `Slowmode changed by ${interaction.user.tag}`);
 
             const color = duration === 0 ? 0x10B981 : 0xF59E0B;
-            const statusEmoji = duration === 0 ? e.pixel_check : e.channel;
+            const statusEmoji = duration === 0 ? e.pixel_check : e.config;
 
             const resultContainer = new ContainerBuilder()
                 .setAccentColor(color)
                 .addSectionComponents(
                     new SectionBuilder()
-                        .setThumbnailAccessory(new ThumbnailBuilder().setURL('https://cdn-icons-png.flaticon.com/512/2991/2991148.png'))
+                        .setThumbnailAccessory(new ThumbnailBuilder().setURL('https://cdn.discordapp.com/emojis/1444028041771880659.webp'))
                         .addTextDisplayComponents(
                             new TextDisplayBuilder().setContent(`# ${statusEmoji} ${t('commands:slowmode.success_title')}`)
                         )
@@ -100,7 +100,7 @@ module.exports = {
                 .setAccentColor(0xFF0000)
                 .addSectionComponents(
                     new SectionBuilder()
-                        .setThumbnailAccessory(new ThumbnailBuilder().setURL('https://cdn-icons-png.flaticon.com/512/2991/2991148.png'))
+                        .setThumbnailAccessory(new ThumbnailBuilder().setURL('https://cdn.discordapp.com/emojis/1444028041771880659.webp'))
                         .addTextDisplayComponents(
                             new TextDisplayBuilder().setContent(`## ${e.pixel_cross} ${t('common:error_occurred')}`),
                             new TextDisplayBuilder().setContent(t('commands:slowmode.error_generic', { error: err.message }))

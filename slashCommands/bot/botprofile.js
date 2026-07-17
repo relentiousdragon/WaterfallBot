@@ -19,12 +19,13 @@ module.exports = {
                 .setDescriptionLocalizations(commandMeta.botprofile.option_profile_description || {})
                 .setRequired(true)
                 .addChoices(
-                    { name: "Default", value: "default" },
+                    { name: "classic", value: "classic" },
                     { name: "Crimson", value: "crimson" },
                     { name: "Azure", value: "azure" },
                     { name: "Amethyst", value: "amethyst" },
                     { name: "Amethyst (Glow)", value: "amethyst_glow" },
-                    { name: "Sea Breeze", value: "sea_breeze" }
+                    { name: "Sea Breeze", value: "sea_breeze" },
+                     { name: "Emerald", value: "emerald" }
                 )
         ),
     integration_types: [0],
@@ -39,7 +40,7 @@ module.exports = {
 
         const assetsDir = path.join(__dirname, "../../assets");
         const profiles = {
-            default: {
+            classic: {
                 avatar: "Waterfall_avatar.webp",
                 banner: "Waterfall_banner.png"
             },
@@ -62,6 +63,10 @@ module.exports = {
             sea_breeze: {
                 avatar: "Waterfall_avatar2_seabreeze2.png",
                 banner: "Waterfall_banner2_seabreeze2.png"
+            },
+             emerald: {
+                avatar: "Waterfall_avatar_emerald.png",
+                banner: "Waterfall_banner_emerald.png"
             }
         };
 
@@ -71,12 +76,13 @@ module.exports = {
         }
 
         const profileNames = {
-            default: "Default",
+            classic: "Classic",
             crimson: "Crimson",
             azure: "Azure",
             amethyst: "Amethyst",
             amethyst_glow: "Amethyst (Glow)",
-            sea_breeze: "Sea Breeze"
+            sea_breeze: "Sea Breeze",
+            emerald: "Emerald"
         };
 
         const COOLDOWN = 600000;
@@ -192,19 +198,22 @@ module.exports = {
         }
 
         const profiles = {
-            default: { avatar: "Waterfall_avatar.webp", banner: "Waterfall_banner.png" },
+            classic: { avatar: "Waterfall_avatar.webp", banner: "Waterfall_banner.png" },
             crimson: { avatar: "Waterfall_avatar2_red.png", banner: "Waterfall_banner2_red.png" },
             azure: { avatar: "Waterfall_avatar2_blue.png", banner: "Waterfall_banner2_blue.png" },
             amethyst: { avatar: "Waterfall_avatar2_amethyst_glow.png", banner: "Waterfall_banner2_amethyst.png" },
-            seabreeze: { avatar: "Waterfall_avatar2_seabreeze2.png", banner: "Waterfall_banner2_seabreeze2.png" }
+            seabreeze: { avatar: "Waterfall_avatar2_seabreeze2.png", banner: "Waterfall_banner2_seabreeze2.png" },
+            emerald: { avatar: "Waterfall_avatar_emerald.png", banner: "Waterfall_banner_emerald.png" }
+
         };
 
         const profileNames = {
-            default: "Default",
+            classic: "classic",
             crimson: "Crimson",
             azure: "Azure",
             amethyst: "Amethyst",
-            seabreeze: "Sea Breeze"
+            seabreeze: "Sea Breeze",
+            emerald: "Emerald"
         };
 
         const selected = profiles[profile];
@@ -279,13 +288,14 @@ module.exports = {
             const a = settings.a_emojis || {};
             const formatEmoji = (id) => id && id !== "?" ? `<:a:${id}>` : "";
 
-            const styleList = ["default", "crimson", "azure", "amethyst", "seabreeze"];
+            const styleList = ["classic", "crimson", "azure", "amethyst", "seabreeze"];
             const styleDescriptions = {
-                default: "Classic",
+                classic: "Legacy",
                 crimson: "Neo: Fiery Red",
                 azure: "Neo: Blue",
                 amethyst: "Neo: Purple (Glow)",
-                seabreeze: "Neo: Teal"
+                seabreeze: "Neo: Teal",
+                emerald: "Neo: Green"
             };
 
             const container = new ContainerBuilder().setAccentColor(0x5865F2);
@@ -350,18 +360,20 @@ module.exports = {
         }
     },
     profiles: {
-        default: { avatar: "Waterfall_avatar.webp", banner: "Waterfall_banner.png" },
+        classic: { avatar: "Waterfall_avatar.webp", banner: "Waterfall_banner.png" },
         crimson: { avatar: "Waterfall_avatar2_red.png", banner: "Waterfall_banner2_red.png" },
         azure: { avatar: "Waterfall_avatar2_blue.png", banner: "Waterfall_banner2_blue.png" },
         amethyst: { avatar: "Waterfall_avatar2_amethyst_glow.png", banner: "Waterfall_banner2_amethyst.png" },
-        seabreeze: { avatar: "Waterfall_avatar2_seabreeze2.png", banner: "Waterfall_banner2_seabreeze2.png" }
+        seabreeze: { avatar: "Waterfall_avatar2_seabreeze2.png", banner: "Waterfall_banner2_seabreeze2.png" },
+        emerald: { avatar: "Waterfall_avatar_emerald.png", banner: "Waterfall_banner_emerald.png" }
     },
     profileNames: {
-        default: "Default",
+        classic: "Classic",
         crimson: "Crimson",
         azure: "Azure",
         amethyst: "Amethyst",
-        seabreeze: "Sea Breeze"
+        seabreeze: "Sea Breeze",
+        emerald: "Emerald"
     }
 };
 
