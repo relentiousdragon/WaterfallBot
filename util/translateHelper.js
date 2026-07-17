@@ -1247,7 +1247,7 @@ function postProcessTranslation(text) {
     for (const [brand, placeholder] of Object.entries(brandNames)) {
         result = result.replaceAll(placeholder, brand);
     }
-g
+
     const merges = [
         { re: /\b(and|but|so|or)(we|you|they|i|it|he|she|the|this|that|these|those|wecannot|cannot|can|could|will|would)/gi, repl: '$1 $2' },
         { re: /\b(Servers)are\b/gi, repl: '$1 are' },

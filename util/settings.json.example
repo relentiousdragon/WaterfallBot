@@ -47,10 +47,10 @@
         "robelo06_4": "?"
     },
     "a_emojis": {
-        "default_1": "?",
-        "default_2": "?",
-        "default_3": "?",
-        "default_4": "?",
+        "classic_1": "?",
+        "classic_2": "?",
+        "classic_3": "?",
+        "classic_4": "?",
         "crimson_1": "?",
         "crimson_2": "?",
         "crimson_3": "?",
@@ -66,6 +66,10 @@
         "seabreeze_1": "?",
         "seabreeze_2": "?",
         "seabreeze_3": "?",
-        "seabreeze_4": "?"
+        "seabreeze_4": "?",
+        "emerald_1": "?",
+        "emerald_2": "?",
+        "emerald_3": "?",
+        "emerald_4": "?"
     }
 }

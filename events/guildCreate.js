@@ -172,16 +172,16 @@ module.exports = {
                 const a = settings.a_emojis || {};
                 const formatEmoji = (id) => id && id !== "?" ? `<:a:${id}>` : "";
 
-                const styleList = ["default", "crimson", "azure", "amethyst", "seabreeze"];
+                const styleList = ["classic", "crimson", "azure", "amethyst", "seabreeze"];
                 const profileNames = {
-                    default: "Default",
+                    classic: "Classic",
                     crimson: "Crimson",
                     azure: "Azure",
                     amethyst: "Amethyst",
                     seabreeze: "Sea Breeze"
                 };
                 const styleDescriptions = {
-                    default: "Classic",
+                    classic: "Legacy",
                     crimson: "Neo: Fiery Red",
                     azure: "Neo: Blue",
                     amethyst: "Neo: Purple (Glow)",
@@ -195,7 +195,7 @@ module.exports = {
                 );
                 avatarContainer.addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(true));
 
-                const normalizedProfile = (currentProfile === 'amethyst_glow' ? 'amethyst' : currentProfile) || 'default';
+                const normalizedProfile = (currentProfile === 'amethyst_glow' ? 'amethyst' : currentProfile) || 'azure';
 
                 for (const style of styleList) {
                     const emojis12 = `${formatEmoji(a[`${style}_1`])}${formatEmoji(a[`${style}_2`])}`;
