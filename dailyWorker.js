@@ -7,7 +7,7 @@ module.exports = {
         const { ServerStats } = require("./schemas/serverStats.js");
         const { Server } = require("./schemas/servers.js");
         const { AttachmentBuilder } = require('discord.js');
-        const i18next = require("i18next");
+        const { i18n } = require("./util/i18n.js");
 
         try {
             const oneWeekAgo = moment().subtract(7, 'days').toDate();
@@ -39,7 +39,7 @@ module.exports = {
 
             for (const server of statsEnabledServers) {
                 const guildId = server.serverID;
-                const t = i18next.getFixedT(server.language || 'en');
+                const t = i18n.getFixedT(server.language || 'en');
 
                 try {
                     await ServerStats.cleanupOldData(guildId);

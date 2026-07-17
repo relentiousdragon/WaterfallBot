@@ -62,7 +62,7 @@ module.exports = {
 
                 await mongoose.connect(process.env.MONGO_URI, {
                     autoIndex: false,
-                    maxPoolSize: 15,
+                    maxPoolSize: 12,
                     minPoolSize: 1,
                     serverSelectionTimeoutMS: 5000,
                     socketTimeoutMS: 15000,
@@ -71,7 +71,8 @@ module.exports = {
                     tls: true,
                     retryWrites: true,
                     directConnection: false,
-                    waitQueueTimeoutMS: 10000,
+                    waitQueueTimeoutMS: 15000,
+                    family: 4,
                 });
 
                 console.log("\x1b[32m%s\x1b[0m", "Mongoose connection established.");
